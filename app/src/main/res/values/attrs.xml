@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GridConstraintLayout">
+        <!-- 网格行数 -->
+        <attr name="gcl_row_count" format="integer" />
+        <!-- 网格列数 -->
+        <attr name="gcl_col_count" format="integer" />
+
+        <!-- 网格横向间距 -->
+        <attr name="gcl_hor_padding" format="dimension" />
+        <!-- 网格纵向间距 -->
+        <attr name="gcl_ver_padding" format="dimension" />
+    </declare-styleable>
+</resources>
