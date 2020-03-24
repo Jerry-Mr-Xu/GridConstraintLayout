@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.MainThread;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.util.AttributeSet;
@@ -12,6 +13,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,7 +45,7 @@ public class GridConstraintLayout extends ConstraintLayout {
     /**
      * 该网格布局的约束关系
      */
-    private ConstraintSet constraintSet = new ConstraintSet();
+    private ConstraintSet constraintSet = null;
 
     public GridConstraintLayout(Context context) {
         super(context);
@@ -66,6 +68,11 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param context 上下文
      */
     private void initAttr(Context context, AttributeSet attrSet) {
+        cellMap = new SparseArray<>();
+
+        constraintSet = new ConstraintSet();
+        constraintSet.clone(this);
+
         if (attrSet == null) {
             return;
         }
@@ -76,10 +83,6 @@ public class GridConstraintLayout extends ConstraintLayout {
         horSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_hor_padding, horSpacing);
         verSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_ver_padding, verSpacing);
         typedArray.recycle();
-
-        cellMap = new SparseArray<>();
-
-        constraintSet.clone(this);
     }
 
     /**
@@ -90,6 +93,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param layoutId 原子View布局id
      * @return 生成成功的原子，如果为空则设置失败
      */
+    @MainThread
     public Cell setCell(final short rowIndex, final short colIndex, @LayoutRes final int layoutId) {
         try {
             return setCell(rowIndex, colIndex, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
@@ -107,6 +111,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param view     原子View
      * @return 生成成功的原子，如果为空则设置失败
      */
+    @MainThread
     public Cell setCell(final short rowIndex, final short colIndex, final View view) {
         if (view == null) {
             return null;
@@ -131,6 +136,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param layoutId       原子View布局id
      * @return 生成成功的原子，如果为空则设置失败
      */
+    @MainThread
     public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, @LayoutRes final int layoutId) {
         try {
             setCell(rowIndex, colIndex, viewWidthInPx, viewHeightInPx, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
@@ -150,15 +156,30 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param view           原子View
      * @return 生成成功的原子，如果为空则设置失败
      */
+    @MainThread
     public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, final View view) {
         if (view == null) {
             return null;
         }
 
         final Cell cell = new Cell(view, rowIndex, colIndex, viewWidthInPx, viewHeightInPx);
-        cellMap.put(rowIndex << 16 + colIndex, cell);
-        Log.e(TAG, "setCell: pos = " + (rowIndex << 16 + colIndex));
+        final int pos = Utils.getPosByRowAndColIndex(rowIndex, colIndex);
+        cellMap.put(pos, cell);
+
+        refreshLayout();
         return null;
+    }
+
+    /**
+     * 刷新布局
+     */
+    @MainThread
+    private void refreshLayout() {
+        final int gridWidth = getLayoutParams().width, girdHeight = getLayoutParams().height;
+        // 先检测一下网格布局的宽高如果是wrap_content则需要根据原子手动计算
+        if (gridWidth == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            
+        }
     }
 
     /**
@@ -188,7 +209,7 @@ public class GridConstraintLayout extends ConstraintLayout {
 
         public Cell(View view, short rowIndex, short colIndex, int viewWidth, int viewHeight) {
             this.view = view;
-            this.viewId = ViewIdGenerator.generateViewId();
+            this.viewId = Utils.generateViewId();
             this.rowIndex = rowIndex;
             this.colIndex = colIndex;
             this.viewWidth = viewWidth;
@@ -217,35 +238,6 @@ public class GridConstraintLayout extends ConstraintLayout {
 
         public int getViewHeight() {
             return viewHeight;
-        }
-    }
-
-    /**
-     * 用于生成ViewId的工具类
-     */
-    private static final class ViewIdGenerator {
-        private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
-
-        /**
-         * 生成ViewId
-         *
-         * @return viewId
-         */
-        @SuppressLint("ObsoleteSdkInt")
-        private static int generateViewId() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                return View.generateViewId();
-            } else {
-                for (; ; ) {
-                    final int result = sNextGeneratedId.get();
-                    // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
-                    int newValue = result + 1;
-                    if (newValue > 0x00FFFFFF) newValue = 1; // Roll over to 1, not 0.
-                    if (sNextGeneratedId.compareAndSet(result, newValue)) {
-                        return result;
-                    }
-                }
-            }
         }
     }
 }
