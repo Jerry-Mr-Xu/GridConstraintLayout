@@ -1,21 +1,16 @@
 package com.jerry.gcl;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.os.Build;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.MainThread;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 基于约束布局的网格布局
@@ -36,11 +31,11 @@ public class GridConstraintLayout extends ConstraintLayout {
     private int horSpacing = 0, verSpacing = 0;
 
     /**
-     * 原子Map
+     * 原子数组
      * <key>原子在网格中的位置</key>
      * <value>原子对象</value>
      */
-    private SparseArray<Cell> cellMap = null;
+    private SparseArray<Cell> cellArray = null;
 
     /**
      * 该网格布局的约束关系
@@ -68,7 +63,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param context 上下文
      */
     private void initAttr(Context context, AttributeSet attrSet) {
-        cellMap = new SparseArray<>();
+        cellArray = new SparseArray<>();
 
         constraintSet = new ConstraintSet();
         constraintSet.clone(this);
@@ -94,13 +89,8 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @return 生成成功的原子，如果为空则设置失败
      */
     @MainThread
-    public Cell setCell(final short rowIndex, final short colIndex, @LayoutRes final int layoutId) {
-        try {
-            return setCell(rowIndex, colIndex, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+    public Cell setCell(final short rowIndex, final short colIndex, @LayoutRes final int layoutId) throws Exception {
+        return setCell(rowIndex, colIndex, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
     }
 
     /**
@@ -112,18 +102,16 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @return 生成成功的原子，如果为空则设置失败
      */
     @MainThread
-    public Cell setCell(final short rowIndex, final short colIndex, final View view) {
+    public Cell setCell(final short rowIndex, final short colIndex, final View view) throws Exception {
         if (view == null) {
-            return null;
+            throw new NullPointerException("view is null");
         }
 
         if (view.getLayoutParams() != null) {
-            setCell(rowIndex, colIndex, view.getLayoutParams().width, view.getLayoutParams().height, view);
+            return setCell(rowIndex, colIndex, view.getLayoutParams().width, view.getLayoutParams().height, view);
         } else {
-            setCell(rowIndex, colIndex, ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.MATCH_CONSTRAINT, view);
+            return setCell(rowIndex, colIndex, ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.MATCH_CONSTRAINT, view);
         }
-
-        return null;
     }
 
     /**
@@ -137,13 +125,8 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @return 生成成功的原子，如果为空则设置失败
      */
     @MainThread
-    public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, @LayoutRes final int layoutId) {
-        try {
-            setCell(rowIndex, colIndex, viewWidthInPx, viewHeightInPx, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+    public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, @LayoutRes final int layoutId) throws Exception {
+        return setCell(rowIndex, colIndex, viewWidthInPx, viewHeightInPx, LayoutInflater.from(getContext()).inflate(layoutId, this, false));
     }
 
     /**
@@ -154,32 +137,55 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param viewWidthInPx  原子View像素宽度
      * @param viewHeightInPx 原子View像素高度
      * @param view           原子View
-     * @return 生成成功的原子，如果为空则设置失败
+     * @return 生成成功的原子
      */
     @MainThread
-    public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, final View view) {
+    public Cell setCell(final short rowIndex, final short colIndex, final int viewWidthInPx, final int viewHeightInPx, final View view) throws Exception {
         if (view == null) {
-            return null;
+            throw new NullPointerException("view is null");
+        }
+        if (getLayoutParams() == null) {
+            throw new NullPointerException("grid is not set layout params");
         }
 
-        final Cell cell = new Cell(view, rowIndex, colIndex, viewWidthInPx, viewHeightInPx);
-        final int pos = Utils.getPosByRowAndColIndex(rowIndex, colIndex);
-        cellMap.put(pos, cell);
+        // 检测原子的宽高和网格是否匹配
+        final int containerWidth = getLayoutParams().width;
+        final int containerHeight = getLayoutParams().height;
+        // 如果原子宽高是wrap_content但网格是确定数值则认为不匹配
+        if (viewWidthInPx == ConstraintSet.WRAP_CONTENT && containerWidth != ViewGroup.LayoutParams.WRAP_CONTENT) {
+            throw new LayoutParamNotMatchException("cell width is wrap_content but parent width is exact value");
+        }
+        if (viewHeightInPx == ConstraintSet.WRAP_CONTENT && containerHeight != ViewGroup.LayoutParams.WRAP_CONTENT) {
+            throw new LayoutParamNotMatchException("cell height is wrap_content but parent height is exact value");
+        }
 
-        refreshLayout();
-        return null;
+        final int pos = Utils.getPosByRowAndColIndex(rowIndex, colIndex);
+        final Cell oldCell = cellArray.get(pos);
+        if (oldCell != null) {
+            // 如果指定位置已有原子，则移除
+            removeView(cellArray.get(pos).view);
+        }
+
+        // 生成原子对象添加到数组中
+        final Cell cell = new Cell(view, view.getId(), rowIndex, colIndex, viewWidthInPx, viewHeightInPx);
+        cellArray.put(pos, cell);
+
+        view.setId(Utils.generateViewId());
+        if (view.getParent() == null) {
+            // 如果要添加的View没有父容器则直接添加到网格
+            addView(view);
+        } else if (view.getParent() != this) {
+            // 如果要添加的View有父容器且父容器不是当前网格，则先从当前父容器中移除然后添加到网格
+            ((ViewGroup) view.getParent()).removeView(view);
+            addView(view);
+        }
+
+        return cell;
     }
 
-    /**
-     * 刷新布局
-     */
-    @MainThread
-    private void refreshLayout() {
-        final int gridWidth = getLayoutParams().width, girdHeight = getLayoutParams().height;
-        // 先检测一下网格布局的宽高如果是wrap_content则需要根据原子手动计算
-        if (gridWidth == ViewGroup.LayoutParams.WRAP_CONTENT) {
-            
-        }
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     /**
@@ -207,9 +213,9 @@ public class GridConstraintLayout extends ConstraintLayout {
         private int viewWidth;
         private int viewHeight;
 
-        public Cell(View view, short rowIndex, short colIndex, int viewWidth, int viewHeight) {
+        public Cell(View view, int viewId, short rowIndex, short colIndex, int viewWidth, int viewHeight) {
             this.view = view;
-            this.viewId = Utils.generateViewId();
+            this.viewId = viewId;
             this.rowIndex = rowIndex;
             this.colIndex = colIndex;
             this.viewWidth = viewWidth;
