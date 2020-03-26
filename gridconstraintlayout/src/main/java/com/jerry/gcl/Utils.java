@@ -38,27 +38,55 @@ class Utils {
      * @param colIndex 第几列
      * @return 位置
      */
-    static int getPosByRowAndColIndex(final short rowIndex, final short colIndex) {
+    static int getPosByRowAndColIndex(final int rowIndex, final int colIndex) {
         return (rowIndex << 16) + colIndex;
     }
 
     /**
-     * 通过位置拆分得到行数
+     * 通过实际位置得到这行所在的位置
      *
      * @param pos 位置
-     * @return 第几行
+     * @return 行所在的位置
      */
-    static short getRowIndexByPos(final int pos) {
-        return (short) (pos >> 16);
+    static int getRowByPos(final int pos) {
+        return pos & 0xFFFF0000 | 0x0000FFFF;
     }
 
     /**
-     * 通过位置拆分得到列数
+     * 通过实际位置得到这列所在的位置
      *
      * @param pos 位置
-     * @return 第几列
+     * @return 列所在的位置
      */
-    static short getColIndexByPos(final int pos) {
-        return (short) (pos & 0xFFFF);
+    static int getColByPos(final int pos) {
+        return pos & 0x0000FFFF | 0xFFFF0000;
+    }
+
+    /**
+     * 给当前位置改变指定行
+     *
+     * @param pos       位置
+     * @param changeNum 改变几行
+     * @return 改变行数之后的位置
+     */
+    static int changeRow(final int pos, final int changeNum) {
+        int row = pos >>> 16;
+        final int col = pos & 0xFFFF;
+        row += changeNum;
+        return getPosByRowAndColIndex(row, col);
+    }
+
+    /**
+     * 给当前位置改变指定列
+     *
+     * @param pos       位置
+     * @param changeNum 改变几列
+     * @return 改变列数之后的位置
+     */
+    static int changeCol(final int pos, final int changeNum) {
+        final int row = pos >>> 16;
+        int col = pos & 0xFFFF;
+        col += changeNum;
+        return getPosByRowAndColIndex(row, col);
     }
 }
