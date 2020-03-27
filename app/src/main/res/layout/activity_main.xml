@@ -8,9 +8,13 @@
 
     <com.jerry.gcl.GridConstraintLayout
         android:id="@+id/gcl_container"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:background="#880000ff"
         app:gcl_col_count="3"
-        app:gcl_row_count="3" />
+        app:gcl_row_count="3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

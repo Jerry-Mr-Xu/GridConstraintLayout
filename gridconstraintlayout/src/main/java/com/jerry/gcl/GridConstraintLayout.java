@@ -160,7 +160,7 @@ public class GridConstraintLayout extends ConstraintLayout {
         if (getLayoutParams() == null) {
             throw new NullPointerException("grid is not set layout params");
         }
-        checkCanSetCell(viewWidth, viewHeight);
+        checkCanSetCell(rowIndex, colIndex, viewWidth, viewHeight);
 
         final int pos = Utils.getPosByRowAndColIndex(rowIndex, colIndex);
         // 先移除指定位置原有的原子View
@@ -201,13 +201,13 @@ public class GridConstraintLayout extends ConstraintLayout {
         // 水平基准线
         final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
         for (int i = 0; i <= rowCount; i++) {
-            final int pos = Utils.getPosByRowAndColIndex(i,  0xFFFF);
+            final int pos = Utils.getPosByRowAndColIndex(i, 0xFFFF);
             if (i == 0 || i == rowCount) {
                 guidelineIdArray.put(pos, ConstraintSet.PARENT_ID);
             } else {
                 if (isHeightWrapContent) {
                     // 如果网格为自适应高度，则根据原子高度来确定基准线
-                    curOffset += maxSizeArray.get(Utils.getPosByRowAndColIndex( (i - 1),  0xFFFF));
+                    curOffset += maxSizeArray.get(Utils.getPosByRowAndColIndex((i - 1), 0xFFFF));
                     percent = 0;
                 } else {
                     // 否则按照比例来确定基准线
@@ -217,8 +217,10 @@ public class GridConstraintLayout extends ConstraintLayout {
 
                 final int guidelineId = guidelineIdArray.get(pos);
                 if (guidelineId > 0) {
+                    // 如果已经有基准线则刷新其位置
                     refreshGuideline(guidelineId, ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
                 } else {
+                    // 否则创建基准线
                     createGuideline(pos, ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
                 }
             }
@@ -244,8 +246,10 @@ public class GridConstraintLayout extends ConstraintLayout {
 
                 final int guidelineId = guidelineIdArray.get(pos);
                 if (guidelineId > 0) {
+                    // 如果已经有基准线则刷新其位置
                     refreshGuideline(guidelineId, ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
                 } else {
+                    // 否则创建基准线
                     createGuideline(pos, ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
                 }
             }
@@ -265,11 +269,10 @@ public class GridConstraintLayout extends ConstraintLayout {
         constraintSet.create(guidelineId, orientation);
         constraintSet.constrainWidth(guidelineId, ConstraintSet.MATCH_CONSTRAINT);
         constraintSet.constrainHeight(guidelineId, ConstraintSet.MATCH_CONSTRAINT);
-        if (offset > 0) {
-            constraintSet.setGuidelineBegin(guidelineId, offset);
-        }
         if (percent > 0) {
             constraintSet.setGuidelinePercent(guidelineId, percent);
+        } else if (offset >= 0) {
+            constraintSet.setGuidelineBegin(guidelineId, offset);
         }
         constraintSet.applyTo(this);
     }
@@ -288,17 +291,7 @@ public class GridConstraintLayout extends ConstraintLayout {
         addView(guideline);
         guidelineIdArray.put(pos, guideline.getId());
 
-        constraintSet.clone(this);
-        constraintSet.create(guideline.getId(), orientation);
-        constraintSet.constrainWidth(guideline.getId(), ConstraintSet.MATCH_CONSTRAINT);
-        constraintSet.constrainHeight(guideline.getId(), ConstraintSet.MATCH_CONSTRAINT);
-        if (offset > 0) {
-            constraintSet.setGuidelineBegin(guideline.getId(), offset);
-        }
-        if (percent > 0) {
-            constraintSet.setGuidelinePercent(guideline.getId(), percent);
-        }
-        constraintSet.applyTo(this);
+        refreshGuideline(guideline.getId(), orientation, offset, percent);
     }
 
     /**
@@ -370,11 +363,20 @@ public class GridConstraintLayout extends ConstraintLayout {
     /**
      * 检测该原子是否能够加入网格
      *
+     * @param rowIndex   原子在第几行
+     * @param colIndex   原子在第几列
      * @param viewWidth  原子View宽度
      * @param viewHeight 原子View高度
      * @throws LayoutParamNotMatchException 宽高不匹配异常
      */
-    private void checkCanSetCell(final int viewWidth, final int viewHeight) throws LayoutParamNotMatchException {
+    private void checkCanSetCell(final int rowIndex, final int colIndex, final int viewWidth, final int viewHeight) throws LayoutParamNotMatchException {
+        if (rowIndex >= rowCount) {
+            throw new IndexOutOfBoundsException("cell rowIndex is bigger than rowCount, out of gird");
+        }
+        if (colIndex >= colCount) {
+            throw new IndexOutOfBoundsException("cell colIndex is bigger than colCount, out of gird");
+        }
+
         // 检测原子的宽高和网格是否匹配
         final int containerWidth = getLayoutParams().width;
         final int containerHeight = getLayoutParams().height;
