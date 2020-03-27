@@ -9,11 +9,12 @@
     <com.jerry.gcl.GridConstraintLayout
         android:id="@+id/gcl_container"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:background="#880000ff"
         app:gcl_col_count="3"
+        app:gcl_hor_padding="10dp"
         app:gcl_row_count="3"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:gcl_ver_padding="5dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

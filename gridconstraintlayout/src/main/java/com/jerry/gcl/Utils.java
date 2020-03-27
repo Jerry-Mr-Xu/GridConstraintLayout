@@ -48,22 +48,42 @@ class Utils {
     }
 
     /**
-     * 通过实际位置得到这行所在的位置
+     * 通过真实行数得到这行所在位置
+     *
+     * @param realRow 真实第几行
+     * @return 行所在位置
+     */
+    static int getRowPosByRealRow(final int realRow) {
+        return (realRow << 16) + MASK_POS_COL;
+    }
+
+    /**
+     * 通过真实列数得到这列所在位置
+     *
+     * @param realCol 真实第几列
+     * @return 列所在位置
+     */
+    static int getColPosByRealCol(final int realCol) {
+        return MASK_POS_ROW + realCol;
+    }
+
+    /**
+     * 通过位置得到这行所在位置
      *
      * @param pos 位置
-     * @return 行所在的位置
+     * @return 行所在位置
      */
-    static int getRowByPos(final int pos) {
+    static int getRowPosByPos(final int pos) {
         return pos & MASK_POS_ROW | MASK_POS_COL;
     }
 
     /**
-     * 通过实际位置得到这列所在的位置
+     * 通过位置得到这列所在位置
      *
      * @param pos 位置
-     * @return 列所在的位置
+     * @return 列所在位置
      */
-    static int getColByPos(final int pos) {
+    static int getColPosByPos(final int pos) {
         return pos & MASK_POS_COL | MASK_POS_ROW;
     }
 
@@ -75,8 +95,8 @@ class Utils {
      * @return 改变后位置
      */
     static int changeRow(final int pos, final int changeNum) {
-        int row = pos >>> 16;
-        final int col = pos & MASK_POS_COL;
+        int row = getRealRow(pos);
+        final int col = getRealCol(pos);
         row += changeNum;
         return getPosByRowAndColIndex(row, col);
     }
@@ -89,8 +109,8 @@ class Utils {
      * @return 改变后位置
      */
     static int changeCol(final int pos, final int changeNum) {
-        final int row = pos >>> 16;
-        int col = pos & MASK_POS_COL;
+        final int row = getRealRow(pos);
+        int col = getRealCol(pos);
         col += changeNum;
         return getPosByRowAndColIndex(row, col);
     }
@@ -104,10 +124,30 @@ class Utils {
      * @return 改变后位置
      */
     static int changeRowAndCol(final int pos, final int rowChange, final int colChange) {
-        int row = pos >>> 16;
-        int col = pos & MASK_POS_COL;
+        int row = getRealRow(pos);
+        int col = getRealCol(pos);
         row += rowChange;
         col += colChange;
         return getPosByRowAndColIndex(row, col);
+    }
+
+    /**
+     * 获取真实的第几行
+     *
+     * @param pos 位置
+     * @return 第几行
+     */
+    static int getRealRow(final int pos) {
+        return pos >>> 16;
+    }
+
+    /**
+     * 获取真实的第几列
+     *
+     * @param pos 位置
+     * @return 第几列
+     */
+    static int getRealCol(final int pos) {
+        return pos & MASK_POS_COL;
     }
 }
