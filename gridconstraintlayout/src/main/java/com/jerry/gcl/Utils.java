@@ -39,12 +39,12 @@ class Utils {
     /**
      * 通过行列数的拼接来得到位置
      *
-     * @param rowIndex 第几行
-     * @param colIndex 第几列
+     * @param row 第几行
+     * @param col 第几列
      * @return 位置
      */
-    static int getPosByRowAndColIndex(final int rowIndex, final int colIndex) {
-        return (rowIndex << 16) + colIndex;
+    static int getPosByRowAndCol(final int row, final int col) {
+        return (row << 16) + col;
     }
 
     /**
@@ -98,7 +98,7 @@ class Utils {
         int row = getRealRow(pos);
         final int col = getRealCol(pos);
         row += changeNum;
-        return getPosByRowAndColIndex(row, col);
+        return getPosByRowAndCol(row, col);
     }
 
     /**
@@ -112,7 +112,7 @@ class Utils {
         final int row = getRealRow(pos);
         int col = getRealCol(pos);
         col += changeNum;
-        return getPosByRowAndColIndex(row, col);
+        return getPosByRowAndCol(row, col);
     }
 
     /**
@@ -128,7 +128,7 @@ class Utils {
         int col = getRealCol(pos);
         row += rowChange;
         col += colChange;
-        return getPosByRowAndColIndex(row, col);
+        return getPosByRowAndCol(row, col);
     }
 
     /**

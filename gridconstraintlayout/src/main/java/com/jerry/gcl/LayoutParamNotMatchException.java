@@ -5,7 +5,7 @@ public class LayoutParamNotMatchException extends Exception {
         super();
     }
 
-    public LayoutParamNotMatchException(String message) {
+    LayoutParamNotMatchException(String message) {
         super(message);
     }
 }
