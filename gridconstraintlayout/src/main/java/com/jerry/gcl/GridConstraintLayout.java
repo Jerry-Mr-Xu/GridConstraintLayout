@@ -287,14 +287,14 @@ public class GridConstraintLayout extends ConstraintLayout {
         final int leftMargin, topMargin, rightMargin, bottomMargin;
         if (isWidthWrapContent) {
             leftMargin = 0;
-            rightMargin = horSpacing;
+            rightMargin = cellRealRightCol == colCount - 1 ? 0 : horSpacing;
         } else {
             leftMargin = cellRealLeftCol * horSpacing / colCount;
             rightMargin = (colCount - cellRealRightCol - 1) * horSpacing / colCount;
         }
         if (isHeightWrapContent) {
             topMargin = 0;
-            bottomMargin = verSpacing;
+            bottomMargin = cellRealBottomRow == rowCount - 1 ? 0 : verSpacing;
         } else {
             topMargin = cellRealTopRow * verSpacing / rowCount;
             bottomMargin = (rowCount - cellRealBottomRow - 1) * verSpacing / rowCount;
