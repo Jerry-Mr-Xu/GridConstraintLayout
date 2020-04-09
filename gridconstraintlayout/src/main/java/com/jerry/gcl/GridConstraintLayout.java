@@ -39,7 +39,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * <key>原子在网格中的位置</key>
      * <value>原子对象</value>
      */
-    private SparseArray<Cell> cellArray = new SparseArray<>(10);
+    private SparseArray<Cell> cellArray = new SparseArray<Cell>(10);
     /**
      * 基准线id数组
      * <key>基准线在网格中的位置</key>
@@ -334,7 +334,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                     // 如果网格为自适应宽度，则根据原子宽度来确定基准线
                     final int maxSize = maxSizeArray.get(Utils.getColPosByRealCol(i - 1));
                     if (maxSize > 0) {
-                        curOffset += (maxSize + (i - 1 == 0 ? horSpacing / 2 : horSpacing));
+                        curOffset += maxSize;
                     }
                 } else {
                     // 否则按照比例来确定基准线
@@ -369,7 +369,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                     // 如果网格为自适应高度，则根据原子高度来确定基准线
                     final int maxSize = maxSizeArray.get(Utils.getRowPosByRealRow(i - 1));
                     if (maxSize > 0) {
-                        curOffset += (maxSize + (i - 1 == 0 ? verSpacing / 2 : verSpacing));
+                        curOffset += maxSize;
                     }
                 } else {
                     // 否则按照比例来确定基准线
