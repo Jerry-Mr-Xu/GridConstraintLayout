@@ -281,10 +281,29 @@ public class GridConstraintLayout extends ConstraintLayout {
         final int cellRightColPos = Utils.getColPosByPos(cellRightBottomPos);
         final int cellBottomRowPos = Utils.getRowPosByPos(cellRightBottomPos);
 
-        constraintSet.connect(cellViewId, ConstraintSet.START, guidelineIdArray.get(cellLeftColPos), ConstraintSet.START, cellRealLeftCol == 0 ? 0 : horSpacing / 2);
-        constraintSet.connect(cellViewId, ConstraintSet.TOP, guidelineIdArray.get(cellTopRowPos), ConstraintSet.TOP, cellRealTopRow == 0 ? 0 : verSpacing / 2);
-        constraintSet.connect(cellViewId, ConstraintSet.END, guidelineIdArray.get(Utils.changeCol(cellRightColPos, 1)), ConstraintSet.END, cellRealRightCol == colCount - 1 ? 0 : horSpacing / 2);
-        constraintSet.connect(cellViewId, ConstraintSet.BOTTOM, guidelineIdArray.get(Utils.changeRow(cellBottomRowPos, 1)), ConstraintSet.BOTTOM, cellRealBottomRow == rowCount - 1 ? 0 : verSpacing / 2);
+        final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
+        final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
+
+        final int leftMargin, topMargin, rightMargin, bottomMargin;
+        if (isWidthWrapContent) {
+            leftMargin = 0;
+            rightMargin = horSpacing;
+        } else {
+            leftMargin = cellRealLeftCol * horSpacing / colCount;
+            rightMargin = (colCount - cellRealRightCol - 1) * horSpacing / colCount;
+        }
+        if (isHeightWrapContent) {
+            topMargin = 0;
+            bottomMargin = verSpacing;
+        } else {
+            topMargin = cellRealTopRow * verSpacing / rowCount;
+            bottomMargin = (rowCount - cellRealBottomRow - 1) * verSpacing / rowCount;
+        }
+
+        constraintSet.connect(cellViewId, ConstraintSet.START, guidelineIdArray.get(cellLeftColPos), ConstraintSet.START, leftMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.TOP, guidelineIdArray.get(cellTopRowPos), ConstraintSet.TOP, topMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.END, guidelineIdArray.get(Utils.changeCol(cellRightColPos, 1)), ConstraintSet.END, rightMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.BOTTOM, guidelineIdArray.get(Utils.changeRow(cellBottomRowPos, 1)), ConstraintSet.BOTTOM, bottomMargin);
         constraintSet.applyTo(this);
     }
 
@@ -443,26 +462,26 @@ public class GridConstraintLayout extends ConstraintLayout {
         }
 
         // TODO: 2020/4/2 p_jruixu 这里每行高和每列宽简单均分处理，之后再改为精确计算
-        final int colWidth = cellWidth > 0 ? cellWidth / cellColSpan : 0;
-        final int rowHeight = cellHeight > 0 ? cellHeight / cellRowSpan : 0;
+        final int colWidth = cellWidth != ConstraintSet.MATCH_CONSTRAINT ? cellWidth / cellColSpan : ConstraintSet.MATCH_CONSTRAINT;
+        final int rowHeight = cellHeight != ConstraintSet.MATCH_CONSTRAINT ? cellHeight / cellRowSpan : ConstraintSet.MATCH_CONSTRAINT;
         for (int row = 0; row < cellRowSpan; row++) {
             for (int col = 0; col < cellColSpan; col++) {
                 // 这里需要计算跨度偏移量
                 final int relativeCellPos = Utils.changeRowAndCol(cellPos, row, col);
-                if (colWidth > 0) {
+                if (colWidth != ConstraintSet.MATCH_CONSTRAINT) {
                     // 如果宽度不是充满父容器
                     // 和当前列的最大宽度比较，如果大于最大宽度则替换
                     final int colPos = Utils.getColPosByPos(relativeCellPos);
-                    if (maxSizeArray.get(colPos) < colWidth) {
-                        maxSizeArray.put(colPos, colWidth);
+                    if (maxSizeArray.get(colPos) < colWidth + horSpacing) {
+                        maxSizeArray.put(colPos, colWidth + horSpacing);
                     }
                 }
-                if (rowHeight > 0) {
+                if (rowHeight != ConstraintSet.MATCH_CONSTRAINT) {
                     // 如果高度不是充满父容器
                     // 和当前行的最大高度比较，如果大于最大高度则替换
                     final int rowPos = Utils.getRowPosByPos(relativeCellPos);
-                    if (maxSizeArray.get(rowPos) < rowHeight) {
-                        maxSizeArray.put(rowPos, rowHeight);
+                    if (maxSizeArray.get(rowPos) < rowHeight + verSpacing) {
+                        maxSizeArray.put(rowPos, rowHeight + verSpacing);
                     }
                 }
 

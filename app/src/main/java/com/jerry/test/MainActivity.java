@@ -3,10 +3,8 @@ package com.jerry.test;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.TextView;
 
 import com.jerry.gcl.GridConstraintLayout;
 
