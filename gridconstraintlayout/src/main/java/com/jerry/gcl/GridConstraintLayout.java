@@ -231,6 +231,7 @@ public class GridConstraintLayout extends ConstraintLayout {
         if (getLayoutParams() == null) {
             throw new NullPointerException("grid is not set layout params");
         }
+        // 检查是否能放下
         checkCanSetCell(cellRow, cellCol, cellWidth, cellHeight, cellRowSpan, cellColSpan);
 
         final int cellPos = Utils.getPosByRowAndCol(cellRow, cellCol);
@@ -255,6 +256,14 @@ public class GridConstraintLayout extends ConstraintLayout {
      */
     public void removeCell(final int cellRow, final int cellCol) {
         removeCell(Utils.getPosByRowAndCol(cellRow, cellCol));
+    }
+
+    public int getRowCount(){
+        return rowCount;
+    }
+
+    public int getColCount() {
+        return colCount;
     }
 
     /**
@@ -548,7 +557,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellColSpan 原子跨几列
      * @throws LayoutParamNotMatchException 宽高不匹配异常
      */
-    private void checkCanSetCell(final int cellRow, final int cellCol, final int cellWidth, final int cellHeight, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws LayoutParamNotMatchException {
+    private void checkCanSetCell(final int cellRow, final int cellCol, final int cellWidth, final int cellHeight, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws Exception {
         if (cellRow + cellRowSpan - 1 >= rowCount) {
             throw new IndexOutOfBoundsException("cell is out of gird");
         }
