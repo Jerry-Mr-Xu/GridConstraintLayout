@@ -249,6 +249,22 @@ public class GridConstraintLayout extends ConstraintLayout {
     }
 
     /**
+     * 获取指定位置的原子View
+     *
+     * @param cellRow 原子在第几行
+     * @param cellCol 原子在第几列
+     * @return 原子View
+     */
+    public View getCellView(final int cellRow, final int cellCol) {
+        final Cell cell = cellArray.get(Utils.getPosByRowAndCol(cellRow, cellCol));
+        if (cell == null) {
+            return null;
+        } else {
+            return cell.view;
+        }
+    }
+
+    /**
      * 移除指定位置的原子
      *
      * @param cellRow 原子在第几行
@@ -258,7 +274,7 @@ public class GridConstraintLayout extends ConstraintLayout {
         removeCell(Utils.getPosByRowAndCol(cellRow, cellCol));
     }
 
-    public int getRowCount(){
+    public int getRowCount() {
         return rowCount;
     }
 

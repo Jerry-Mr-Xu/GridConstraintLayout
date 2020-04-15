@@ -31,6 +31,10 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_DOWN: {
                         startRow = y / cellHeight;
                         startCol = x / cellWidth;
+                        final View view = gclContainer.getCellView(startRow, startCol);
+                        if (view != null) {
+                            view.setBackgroundColor(0xFF000000);
+                        }
                         break;
                     }
                     case MotionEvent.ACTION_UP: {
