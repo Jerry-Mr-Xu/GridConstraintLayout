@@ -6,6 +6,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.constraint.Guideline;
@@ -271,7 +272,8 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellCol 原子在第几列
      */
     public void removeCell(final int cellRow, final int cellCol) {
-        removeCell(Utils.getPosByRowAndCol(cellRow, cellCol));
+        // TODO: 2020/4/20 这里需要重新计算行列最大宽高并重新布局
+        removeCell(Utils.getPosByRowAndCol(cellRow, cellCol), null);
     }
 
     public int getRowCount() {
@@ -455,13 +457,13 @@ public class GridConstraintLayout extends ConstraintLayout {
      * 把原子View添加到网格中
      *
      * @param cellView    原子View
-     * @param cellWidth   原子View宽度
-     * @param cellHeight  原子View高度
+     * @param viewWidth   原子View宽度
+     * @param viewHeight  原子View高度
      * @param cellPos     原子在网格中的位置
      * @param cellRowSpan 原子跨几行
      * @param cellColSpan 原子跨几列
      */
-    private void addCellView(@NonNull final View cellView, int cellWidth, int cellHeight, final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) {
+    private void addCellView(@NonNull final View cellView, int viewWidth, int viewHeight, final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) {
         cellView.setId(Utils.generateViewId());
         final ViewGroup parent = (ViewGroup) cellView.getParent();
         if (parent == null) {
@@ -475,25 +477,27 @@ public class GridConstraintLayout extends ConstraintLayout {
 
         // 给原子View设置宽高
         constraintSet.clone(this);
-        constraintSet.constrainWidth(cellView.getId(), cellWidth);
-        constraintSet.constrainHeight(cellView.getId(), cellHeight);
+        constraintSet.constrainWidth(cellView.getId(), viewWidth);
+        constraintSet.constrainHeight(cellView.getId(), viewHeight);
         constraintSet.applyTo(this);
 
-        if (cellWidth == ConstraintSet.WRAP_CONTENT || cellHeight == ConstraintSet.WRAP_CONTENT) {
+        if (viewWidth == ConstraintSet.WRAP_CONTENT || viewHeight == ConstraintSet.WRAP_CONTENT) {
             // 如果宽度或高度是自适应则手动测量一下
             cellView.measure(0, 0);
-            cellWidth = cellWidth == ConstraintSet.WRAP_CONTENT ? cellView.getMeasuredWidth() : cellWidth;
-            cellHeight = cellHeight == ConstraintSet.WRAP_CONTENT ? cellView.getMeasuredHeight() : cellHeight;
+            viewWidth = viewWidth == ConstraintSet.WRAP_CONTENT ? cellView.getMeasuredWidth() : viewWidth;
+            viewHeight = viewHeight == ConstraintSet.WRAP_CONTENT ? cellView.getMeasuredHeight() : viewHeight;
         }
 
-        // TODO: 2020/4/2 p_jruixu 这里每行高和每列宽简单均分处理，之后再改为精确计算
-        final int colWidth = cellWidth != ConstraintSet.MATCH_CONSTRAINT ? cellWidth / cellColSpan : ConstraintSet.MATCH_CONSTRAINT;
-        final int rowHeight = cellHeight != ConstraintSet.MATCH_CONSTRAINT ? cellHeight / cellRowSpan : ConstraintSet.MATCH_CONSTRAINT;
+        // TODO: 2020/4/2 这里每行高和每列宽简单均分处理，之后再改为精确计算
+        final int colWidth = viewWidth != ConstraintSet.MATCH_CONSTRAINT ? viewWidth / cellColSpan : ConstraintSet.MATCH_CONSTRAINT;
+        final int rowHeight = viewHeight != ConstraintSet.MATCH_CONSTRAINT ? viewHeight / cellRowSpan : ConstraintSet.MATCH_CONSTRAINT;
+        final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
+        final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
         for (int row = 0; row < cellRowSpan; row++) {
             for (int col = 0; col < cellColSpan; col++) {
                 // 这里需要计算跨度偏移量
                 final int relativeCellPos = Utils.changeRowAndCol(cellPos, row, col);
-                if (colWidth != ConstraintSet.MATCH_CONSTRAINT) {
+                if (isWidthWrapContent && colWidth != ConstraintSet.MATCH_CONSTRAINT) {
                     // 如果宽度不是充满父容器
                     // 和当前列的最大宽度比较，如果大于最大宽度则替换
                     final int colPos = Utils.getColPosByPos(relativeCellPos);
@@ -501,7 +505,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                         maxSizeArray.put(colPos, colWidth + horSpacing);
                     }
                 }
-                if (rowHeight != ConstraintSet.MATCH_CONSTRAINT) {
+                if (isHeightWrapContent && rowHeight != ConstraintSet.MATCH_CONSTRAINT) {
                     // 如果高度不是充满父容器
                     // 和当前行的最大高度比较，如果大于最大高度则替换
                     final int rowPos = Utils.getRowPosByPos(relativeCellPos);
@@ -510,7 +514,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                     }
                 }
 
-                cellArray.put(relativeCellPos, new Cell(cellView, cellRowSpan, cellColSpan, row, col));
+                cellArray.put(relativeCellPos, new Cell(cellView, viewWidth, viewHeight, cellRowSpan, cellColSpan, row, col));
             }
         }
     }
@@ -524,11 +528,51 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellColSpan 原子跨几列
      */
     private void removeExistingCell(final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) {
+        // 被移除原子影响的行和列
+        final SparseIntArray removedRowAndCol = new SparseIntArray();
+
         for (int i = 0; i < cellRowSpan; i++) {
             for (int j = 0; j < cellColSpan; j++) {
                 // 要将跨度内所有View移除
                 final int relativeCellPos = Utils.changeRowAndCol(cellPos, i, j);
-                removeCell(relativeCellPos);
+                removeCell(relativeCellPos, removedRowAndCol);
+            }
+        }
+
+        for (int i = 0; i < removedRowAndCol.size(); i++) {
+            recalculateMaxSize(removedRowAndCol.keyAt(i));
+        }
+    }
+
+    /**
+     * 重新计算行最大高度或列最大宽度
+     *
+     * @param rowOrColPos 行或列
+     */
+    private void recalculateMaxSize(final int rowOrColPos) {
+        if (Utils.isRowPos(rowOrColPos)) {
+            // 先将这一行的最大高度置为0
+            maxSizeArray.put(rowOrColPos, 0);
+            final int realRow = Utils.getRealRow(rowOrColPos);
+            // 计算这一行的最大高度
+            for (int i = 0; i < colCount; i++) {
+                final int pos = Utils.getPosByRowAndCol(realRow, i);
+                final Cell cell = cellArray.get(pos);
+                if (cell != null && cell.viewHeight > maxSizeArray.get(rowOrColPos)) {
+                    maxSizeArray.put(rowOrColPos, cell.viewHeight);
+                }
+            }
+        } else if (Utils.isColPos(rowOrColPos)) {
+            // 先将这一列的最大宽度置为0
+            maxSizeArray.put(rowOrColPos, 0);
+            final int realCol = Utils.getRealCol(rowOrColPos);
+            // 计算这一列的最大宽度
+            for (int i = 0; i < rowCount; i++) {
+                final int pos = Utils.getPosByRowAndCol(i, realCol);
+                final Cell cell = cellArray.get(pos);
+                if (cell != null && cell.viewWidth > maxSizeArray.get(rowOrColPos)) {
+                    maxSizeArray.put(rowOrColPos, cell.viewWidth);
+                }
             }
         }
     }
@@ -538,13 +582,15 @@ public class GridConstraintLayout extends ConstraintLayout {
      *
      * @param cellPos 指定位置
      */
-    private void removeCell(final int cellPos) {
+    private void removeCell(final int cellPos, @Nullable final SparseIntArray removedRowAndCol) {
         // 获取指定位置的原子
         final Cell cell = cellArray.get(cellPos);
         if (cell == null) {
             return;
         }
 
+        final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
+        final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
         // 获取原子左上角位置
         final int cellLeftTopPos = Utils.changeRowAndCol(cellPos, -cell.innerRow, -cell.innerCol);
         for (int i = 0; i < cell.rowSpan; i++) {
@@ -552,6 +598,18 @@ public class GridConstraintLayout extends ConstraintLayout {
                 // 把跨度内每个原子从数组中移除
                 final int relativeCellPos = Utils.changeRowAndCol(cellLeftTopPos, i, j);
                 cellArray.remove(relativeCellPos);
+
+                if (removedRowAndCol != null) {
+                    // 被移除原子所在的行和列
+                    if (isWidthWrapContent) {
+                        final int removedCol = Utils.getColPosByPos(relativeCellPos);
+                        removedRowAndCol.put(removedCol, removedCol);
+                    }
+                    if (isHeightWrapContent) {
+                        final int removedRow = Utils.getRowPosByPos(relativeCellPos);
+                        removedRowAndCol.put(removedRow, removedRow);
+                    }
+                }
             }
         }
 
@@ -602,6 +660,10 @@ public class GridConstraintLayout extends ConstraintLayout {
          */
         View view;
         /**
+         * 原子View宽高
+         */
+        int viewWidth, viewHeight;
+        /**
          * 原子行列跨度
          */
         int rowSpan, colSpan;
@@ -610,8 +672,10 @@ public class GridConstraintLayout extends ConstraintLayout {
          */
         int innerRow, innerCol;
 
-        Cell(View view, int rowSpan, int colSpan, int innerRow, int innerCol) {
+        Cell(View view, int viewWidth, int viewHeight, int rowSpan, int colSpan, int innerRow, int innerCol) {
             this.view = view;
+            this.viewWidth = viewWidth;
+            this.viewHeight = viewHeight;
             this.rowSpan = rowSpan;
             this.colSpan = colSpan;
             this.innerRow = innerRow;

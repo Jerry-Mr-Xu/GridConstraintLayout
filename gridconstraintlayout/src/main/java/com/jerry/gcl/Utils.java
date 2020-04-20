@@ -150,4 +150,24 @@ class Utils {
     static int getRealCol(final int pos) {
         return pos & MASK_POS_COL;
     }
+
+    /**
+     * 判断所指定位置是否是行
+     *
+     * @param pos 位置
+     * @return 是否是行
+     */
+    static boolean isRowPos(final int pos) {
+        return (pos & MASK_POS_COL) == MASK_POS_COL;
+    }
+
+    /**
+     * 判断所指定位置是否是列
+     *
+     * @param pos 位置
+     * @return 是否是列
+     */
+    static boolean isColPos(final int pos) {
+        return (pos & MASK_POS_ROW) == MASK_POS_ROW;
+    }
 }
