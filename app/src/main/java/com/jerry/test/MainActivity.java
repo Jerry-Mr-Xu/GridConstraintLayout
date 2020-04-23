@@ -62,5 +62,23 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        final GridConstraintLayout gclWrapContainer = findViewById(R.id.gcl_wrap_container);
+        try {
+            View view = new View(this);
+            view.setBackgroundColor(colorArray[0]);
+            gclWrapContainer.setCell(view, 0, 0, 200, 20);
+            view = new View(this);
+            view.setBackgroundColor(colorArray[1]);
+            gclWrapContainer.setCell(view, 0, 1, 400, 30);
+            view = new View(this);
+            view.setBackgroundColor(colorArray[2]);
+            gclWrapContainer.setCell(view, 0, 2, 100, 50);
+            view = new View(this);
+            view.setBackgroundColor(colorArray[3]);
+            gclWrapContainer.setCellWithSpan(view, 1, 0, 500, 30, 1, 2);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
