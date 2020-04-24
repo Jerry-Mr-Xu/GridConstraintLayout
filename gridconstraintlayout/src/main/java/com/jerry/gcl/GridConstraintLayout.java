@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.IntRange;
 import android.support.annotation.LayoutRes;
-import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
@@ -14,6 +13,7 @@ import android.support.constraint.Guideline;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -97,160 +97,31 @@ public class GridConstraintLayout extends ConstraintLayout {
     /**
      * 在网格指定位置设置原子
      *
-     * @param cellLayout 原子View布局id
-     * @param cellRow    原子在第几行
-     * @param cellCol    原子在第几列
+     * @param cellBuilder 原子构造器
      * @return 生成成功的原子View
      */
-    @MainThread
-    public View setCell(@LayoutRes final int cellLayout, final int cellRow, final int cellCol) throws Exception {
-        return setCell(LayoutInflater.from(getContext()).inflate(cellLayout, this, false), cellRow, cellCol);
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellLayout  原子View布局id
-     * @param cellRow     原子在第几行
-     * @param cellCol     原子在第几列
-     * @param cellRowSpan 原子跨几行
-     * @param cellColSpan 原子跨几列
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCellWithSpan(@LayoutRes final int cellLayout, final int cellRow, final int cellCol, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws Exception {
-        return setCellWithSpan(LayoutInflater.from(getContext()).inflate(cellLayout, this, false), cellRow, cellCol, cellRowSpan, cellColSpan);
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellView 原子View
-     * @param cellRow  原子在第几行
-     * @param cellCol  原子在第几列
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCell(final View cellView, final int cellRow, final int cellCol) throws Exception {
-        if (cellView == null) {
-            throw new NullPointerException("cellView is null");
-        }
-
-        if (cellView.getLayoutParams() != null) {
-            return setCell(cellView, cellRow, cellCol, cellView.getLayoutParams().width, cellView.getLayoutParams().height);
-        } else {
-            return setCell(cellView, cellRow, cellCol, ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.MATCH_CONSTRAINT);
-        }
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellView    原子View
-     * @param cellRow     原子在第几行
-     * @param cellCol     原子在第几列
-     * @param cellRowSpan 原子跨几行
-     * @param cellColSpan 原子跨几列
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCellWithSpan(final View cellView, final int cellRow, final int cellCol, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws Exception {
-        if (cellView == null) {
-            throw new NullPointerException("cellView is null");
-        }
-
-        if (cellView.getLayoutParams() != null) {
-            return setCellWithSpan(cellView, cellRow, cellCol, cellView.getLayoutParams().width, cellView.getLayoutParams().height, cellRowSpan, cellColSpan);
-        } else {
-            return setCellWithSpan(cellView, cellRow, cellCol, ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.MATCH_CONSTRAINT, cellRowSpan, cellColSpan);
-        }
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellLayout 原子View布局id
-     * @param cellRow    原子在第几行
-     * @param cellCol    原子在第几列
-     * @param cellWidth  原子View宽度
-     * @param cellHeight 原子View高度
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCell(@LayoutRes final int cellLayout, final int cellRow, final int cellCol, final int cellWidth, final int cellHeight) throws Exception {
-        return setCell(LayoutInflater.from(getContext()).inflate(cellLayout, this, false), cellRow, cellCol, cellWidth, cellHeight);
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellLayout  原子View布局id
-     * @param cellRow     原子在第几行
-     * @param cellCol     原子在第几列
-     * @param cellWidth   原子View宽度
-     * @param cellHeight  原子View高度
-     * @param cellRowSpan 原子跨几行
-     * @param cellColSpan 原子跨几列
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCellWithSpan(@LayoutRes final int cellLayout, final int cellRow, final int cellCol, final int cellWidth, final int cellHeight, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws Exception {
-        return setCellWithSpan(LayoutInflater.from(getContext()).inflate(cellLayout, this, false), cellRow, cellCol, cellWidth, cellHeight, cellRowSpan, cellColSpan);
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellView   原子View
-     * @param cellRow    原子在第几行
-     * @param cellCol    原子在第几列
-     * @param cellWidth  原子View宽度
-     * @param cellHeight 原子View高度
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCell(final View cellView, final int cellRow, final int cellCol, final int cellWidth, final int cellHeight) throws Exception {
-        return setCellWithSpan(cellView, cellRow, cellCol, cellWidth, cellHeight, 1, 1);
-    }
-
-    /**
-     * 在网格指定位置设置原子
-     *
-     * @param cellView    原子View
-     * @param cellRow     原子在第几行
-     * @param cellCol     原子在第几列
-     * @param cellWidth   原子View宽度
-     * @param cellHeight  原子View高度
-     * @param cellRowSpan 原子跨几行
-     * @param cellColSpan 原子跨几列
-     * @return 生成成功的原子View
-     */
-    @MainThread
-    public View setCellWithSpan(final View cellView, final int cellRow, final int cellCol, final int cellWidth, final int cellHeight, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) throws Exception {
-        if (cellView == null) {
-            throw new NullPointerException("cellView is null");
-        }
+    public View setCell(@NonNull final CellBuilder cellBuilder) throws Exception {
         if (getLayoutParams() == null) {
             throw new NullPointerException("grid is not set layout params");
         }
         // 检查是否能放下
-        checkCanSetCell(cellRow, cellCol, cellWidth, cellHeight, cellRowSpan, cellColSpan);
+        checkCanSetCell(cellBuilder.cellRow, cellBuilder.cellCol, cellBuilder.viewWidth, cellBuilder.viewHeight, cellBuilder.rowSpan, cellBuilder.colSpan);
 
-        final int cellPos = Utils.getPosByRowAndCol(cellRow, cellCol);
+        final int cellPos = Utils.getPosByRowAndCol(cellBuilder.cellRow, cellBuilder.cellCol);
         final SparseIntArray needCalculatePos = new SparseIntArray();
         // 先移除指定位置（包括跨度内）原有的原子View
-        removeExistingCell(cellPos, cellRowSpan, cellColSpan, needCalculatePos);
+        removeExistingCell(cellPos, cellBuilder.rowSpan, cellBuilder.colSpan, needCalculatePos);
         // 再将新原子View添加到网格中
-        addCellView(cellView, cellWidth, cellHeight, cellPos, cellRowSpan, cellColSpan, needCalculatePos);
+        addCellView(cellBuilder.cellView, cellBuilder.viewWidth, cellBuilder.viewHeight, cellPos, cellBuilder.rowSpan, cellBuilder.colSpan, cellBuilder.viewGravity, needCalculatePos);
 
         calculateMaxSize(needCalculatePos);
 
         // 建立基准线
         setupGuidelines();
         // 设置原子View的约束
-        refreshCellConstraint(cellPos, cellRowSpan, cellColSpan);
+        refreshCellConstraint(cellPos, cellBuilder.rowSpan, cellBuilder.colSpan);
 
-        return cellView;
+        return cellBuilder.cellView;
     }
 
     /**
@@ -468,9 +339,10 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellPos          原子在网格中的位置
      * @param cellRowSpan      原子跨几行
      * @param cellColSpan      原子跨几列
+     * @param viewGravity      原子View的Gravity
      * @param needCalculatePos 需要计算最大宽高的行列位置
      */
-    private void addCellView(@NonNull final View cellView, final int viewWidth, final int viewHeight, final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan, @Nullable final SparseIntArray needCalculatePos) {
+    private void addCellView(@NonNull final View cellView, final int viewWidth, final int viewHeight, final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan, final int viewGravity, @Nullable final SparseIntArray needCalculatePos) {
         cellView.setId(Utils.generateViewId());
         final ViewGroup parent = (ViewGroup) cellView.getParent();
         if (parent == null) {
@@ -486,6 +358,7 @@ public class GridConstraintLayout extends ConstraintLayout {
         // 给原子View设置宽高
         constraintSet.constrainWidth(cellView.getId(), viewWidth);
         constraintSet.constrainHeight(cellView.getId(), viewHeight);
+        setCellViewGravity(cellView.getId(), viewGravity);
         // 给原子View设置Gravity
         constraintSet.applyTo(this);
 
@@ -509,6 +382,36 @@ public class GridConstraintLayout extends ConstraintLayout {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 给原子View设置gravity
+     *
+     * @param viewId      原子ViewId
+     * @param viewGravity 原子ViewGravity
+     */
+    private void setCellViewGravity(int viewId, int viewGravity) {
+        final int horGravity = viewGravity & Gravity.HORIZONTAL_GRAVITY_MASK;
+        final int verGravity = viewGravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+        if (horGravity == Gravity.LEFT) {
+            constraintSet.setHorizontalBias(viewId, 0);
+        }
+        if (verGravity == Gravity.TOP) {
+            constraintSet.setVerticalBias(viewId, 0);
+        }
+        if (horGravity == Gravity.RIGHT) {
+            constraintSet.setHorizontalBias(viewId, 1);
+        }
+        if (verGravity == Gravity.BOTTOM) {
+            constraintSet.setVerticalBias(viewId, 1);
+        }
+        if (horGravity == Gravity.CENTER_HORIZONTAL) {
+            constraintSet.setHorizontalBias(viewId, 0.5f);
+        }
+        if (verGravity == Gravity.CENTER_VERTICAL) {
+            constraintSet.setVerticalBias(viewId, 0.5f);
         }
     }
 
@@ -745,6 +648,52 @@ public class GridConstraintLayout extends ConstraintLayout {
             this.colSpan = colSpan;
             this.innerRow = innerRow;
             this.innerCol = innerCol;
+        }
+    }
+
+    /**
+     * 原子构造器
+     */
+    public static final class CellBuilder {
+        private final View cellView;
+        private final int cellRow, cellCol;
+        private int viewWidth, viewHeight;
+        private int rowSpan, colSpan;
+        private int viewGravity;
+
+        public CellBuilder(@NonNull final GridConstraintLayout parent, @LayoutRes final int layoutId, final int cellRow, final int cellCol) throws NullPointerException {
+            this(LayoutInflater.from(parent.getContext()).inflate(layoutId, parent, false), cellRow, cellCol);
+        }
+
+        public CellBuilder(final View view, final int cellRow, final int cellCol) throws NullPointerException {
+            if (view == null) {
+                throw new NullPointerException("cellView is null");
+            }
+            this.cellView = view;
+            this.cellRow = cellRow;
+            this.cellCol = cellCol;
+            this.viewWidth = view.getLayoutParams() == null ? 0 : view.getLayoutParams().width;
+            this.viewHeight = view.getLayoutParams() == null ? 0 : view.getLayoutParams().height;
+            this.rowSpan = 1;
+            this.colSpan = 1;
+            this.viewGravity = Gravity.NO_GRAVITY;
+        }
+
+        public CellBuilder size(final int viewWidth, final int viewHeight) {
+            this.viewWidth = viewWidth;
+            this.viewHeight = viewHeight;
+            return this;
+        }
+
+        public CellBuilder span(final int rowSpan, final int colSpan) {
+            this.rowSpan = rowSpan;
+            this.colSpan = colSpan;
+            return this;
+        }
+
+        public CellBuilder gravity(final int gravity) {
+            this.viewGravity = gravity;
+            return this;
         }
     }
 }
