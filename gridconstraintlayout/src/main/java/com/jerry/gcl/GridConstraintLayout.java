@@ -520,7 +520,7 @@ public class GridConstraintLayout extends ConstraintLayout {
 
             if (cell.innerRow == cell.rowSpan - 1) {
                 // 如果一个原子占多行则只在最后一行参与比较
-                int lastRowHeight = cell.viewHeight;
+                int lastRowHeight = cell.viewHeight + verSpacing;
                 // 将View高度减去其他行的最大高度
                 for (int j = -cell.rowSpan + 1; j < 0; j++) {
                     lastRowHeight -= maxSizeArray.get(Utils.getRowPosByRealRow(realRow + j));
@@ -553,7 +553,7 @@ public class GridConstraintLayout extends ConstraintLayout {
 
             if (cell.innerCol == cell.colSpan - 1) {
                 // 如果一个原子占多列则只在最后一列参与比较
-                int lastColWidth = cell.viewWidth;
+                int lastColWidth = cell.viewWidth + horSpacing;
                 // 将View宽度减去其他列的最大宽度
                 for (int j = -cell.colSpan + 1; j < 0; j++) {
                     lastColWidth -= maxSizeArray.get(Utils.getColPosByRealCol(realCol + j));
