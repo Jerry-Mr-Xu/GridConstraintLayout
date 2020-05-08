@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.IntRange;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
@@ -35,6 +36,11 @@ public class GridConstraintLayout extends ConstraintLayout {
      * 网格横纵向间距
      */
     private int horSpacing = 0, verSpacing = 0;
+
+    /**
+     * 实际使用到的最大行列数（有可能未填充满）
+     */
+    private int inUseMaxRow = 0, inUseMaxCol = 0;
 
     /**
      * 原子View数组
@@ -77,21 +83,14 @@ public class GridConstraintLayout extends ConstraintLayout {
     }
 
     /**
-     * 初始化一些属性
+     * 设置网格大小
      *
-     * @param context 上下文
+     * @param rowCount 多少行
+     * @param colCount 多少列
      */
-    private void initAttr(Context context, AttributeSet attrSet) {
-        if (attrSet == null) {
-            return;
-        }
-
-        TypedArray typedArray = context.obtainStyledAttributes(attrSet, R.styleable.GridConstraintLayout);
-        rowCount = typedArray.getInt(R.styleable.GridConstraintLayout_gcl_row_count, rowCount);
-        colCount = typedArray.getInt(R.styleable.GridConstraintLayout_gcl_col_count, colCount);
-        horSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_hor_padding, horSpacing);
-        verSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_ver_padding, verSpacing);
-        typedArray.recycle();
+    public void setSize(final int rowCount, final int colCount) {
+        this.rowCount = rowCount;
+        this.colCount = colCount;
     }
 
     /**
@@ -100,6 +99,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellBuilder 原子构造器
      * @return 生成成功的原子View
      */
+    @MainThread
     public View setCell(@NonNull final CellBuilder cellBuilder) throws Exception {
         if (getLayoutParams() == null) {
             throw new NullPointerException("grid is not set layout params");
@@ -115,11 +115,14 @@ public class GridConstraintLayout extends ConstraintLayout {
         addCellView(cellBuilder.cellView, cellBuilder.viewWidth, cellBuilder.viewHeight, cellPos, cellBuilder.rowSpan, cellBuilder.colSpan, cellBuilder.viewGravity, needCalculatePos);
 
         calculateMaxSize(needCalculatePos);
+        calculateInUseMaxPos();
 
         // 建立基准线
         setupGuidelines();
         // 设置原子View的约束
-        refreshCellConstraint(cellPos, cellBuilder.rowSpan, cellBuilder.colSpan);
+        for (int i = 0; i < cellArray.size(); i++) {
+            refreshCellConstraint(cellArray.keyAt(i));
+        }
 
         return cellBuilder.cellView;
     }
@@ -160,15 +163,38 @@ public class GridConstraintLayout extends ConstraintLayout {
     }
 
     /**
+     * 初始化一些属性
+     *
+     * @param context 上下文
+     */
+    private void initAttr(Context context, AttributeSet attrSet) {
+        if (attrSet == null) {
+            return;
+        }
+
+        TypedArray typedArray = context.obtainStyledAttributes(attrSet, R.styleable.GridConstraintLayout);
+        rowCount = typedArray.getInt(R.styleable.GridConstraintLayout_gcl_row_count, rowCount);
+        colCount = typedArray.getInt(R.styleable.GridConstraintLayout_gcl_col_count, colCount);
+        horSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_hor_padding, horSpacing);
+        verSpacing = typedArray.getDimensionPixelSize(R.styleable.GridConstraintLayout_gcl_ver_padding, verSpacing);
+        typedArray.recycle();
+    }
+
+    /**
      * 刷新原子View的约束
      *
-     * @param cellPos     原子在网格中的位置
-     * @param cellRowSpan 原子跨几行
-     * @param cellColSpan 原子跨几列
+     * @param cellPos 原子在网格中的位置
      */
-    private void refreshCellConstraint(final int cellPos, @IntRange(from = 1) final int cellRowSpan, @IntRange(from = 1) final int cellColSpan) {
+    private void refreshCellConstraint(final int cellPos) {
         constraintSet.clone(this);
-        final int cellViewId = cellArray.get(cellPos).view.getId();
+        final Cell cell = cellArray.get(cellPos);
+        if (cell.innerRow != 0 || cell.innerCol != 0) {
+            // 每个原子只刷新一次
+            return;
+        }
+
+        final int cellViewId = cell.view.getId();
+        final int cellRowSpan = cell.rowSpan, cellColSpan = cell.colSpan;
 
         final int cellLeftTopPos = cellPos;
         final int cellRightBottomPos = Utils.changeRowAndCol(cellPos, cellRowSpan - 1, cellColSpan - 1);
@@ -189,14 +215,14 @@ public class GridConstraintLayout extends ConstraintLayout {
         final int leftMargin, topMargin, rightMargin, bottomMargin;
         if (isWidthWrapContent) {
             leftMargin = 0;
-            rightMargin = cellRealRightCol == colCount - 1 ? 0 : horSpacing;
+            rightMargin = cellRealRightCol == inUseMaxCol ? 0 : horSpacing;
         } else {
             leftMargin = cellRealLeftCol * horSpacing / colCount;
             rightMargin = (colCount - cellRealRightCol - 1) * horSpacing / colCount;
         }
         if (isHeightWrapContent) {
             topMargin = 0;
-            bottomMargin = cellRealBottomRow == rowCount - 1 ? 0 : verSpacing;
+            bottomMargin = cellRealBottomRow == inUseMaxRow ? 0 : verSpacing;
         } else {
             topMargin = cellRealTopRow * verSpacing / rowCount;
             bottomMargin = (rowCount - cellRealBottomRow - 1) * verSpacing / rowCount;
@@ -227,9 +253,9 @@ public class GridConstraintLayout extends ConstraintLayout {
         int curOffset = 0;
         float percent = 0;
         final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
-        for (int i = 0; i <= colCount; i++) {
+        for (int i = 0; i <= inUseMaxCol + 1; i++) {
             final int glPos = Utils.getColPosByRealCol(i);
-            if (i == 0 || i == colCount) {
+            if (i == 0 || i == inUseMaxCol + 1) {
                 guidelineIdArray.put(glPos, ConstraintSet.PARENT_ID);
             } else {
                 if (isWidthWrapContent) {
@@ -237,14 +263,17 @@ public class GridConstraintLayout extends ConstraintLayout {
                     final int maxSize = maxSizeArray.get(Utils.getColPosByRealCol(i - 1));
                     if (maxSize > 0) {
                         curOffset += maxSize;
+                    } else {
+                        guidelineIdArray.put(glPos, guidelineIdArray.get(Utils.changeCol(glPos, -1)));
+                        continue;
                     }
                 } else {
                     // 否则按照比例来确定基准线
                     percent = i * 1.0f / colCount;
                 }
 
-                final int glId = guidelineIdArray.get(glPos);
-                if (glId > 0) {
+                final int glId = guidelineIdArray.get(glPos), leftGlId = guidelineIdArray.get(Utils.changeCol(glPos, -1));
+                if (glId > 0 && glId != leftGlId) {
                     // 如果已经有基准线则刷新其位置
                     refreshGuideline(glId, ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
                 } else {
@@ -262,9 +291,9 @@ public class GridConstraintLayout extends ConstraintLayout {
         int curOffset = 0;
         float percent = 0;
         final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
-        for (int i = 0; i <= rowCount; i++) {
+        for (int i = 0; i <= inUseMaxRow + 1; i++) {
             final int glPos = Utils.getRowPosByRealRow(i);
-            if (i == 0 || i == rowCount) {
+            if (i == 0 || i == inUseMaxRow + 1) {
                 guidelineIdArray.put(glPos, ConstraintSet.PARENT_ID);
             } else {
                 if (isHeightWrapContent) {
@@ -272,14 +301,17 @@ public class GridConstraintLayout extends ConstraintLayout {
                     final int maxSize = maxSizeArray.get(Utils.getRowPosByRealRow(i - 1));
                     if (maxSize > 0) {
                         curOffset += maxSize;
+                    } else {
+                        guidelineIdArray.put(glPos, guidelineIdArray.get(Utils.changeRow(glPos, -1)));
+                        continue;
                     }
                 } else {
                     // 否则按照比例来确定基准线
                     percent = i * 1.0f / rowCount;
                 }
 
-                final int glId = guidelineIdArray.get(glPos);
-                if (glId > 0) {
+                final int glId = guidelineIdArray.get(glPos), topGlId = guidelineIdArray.get(Utils.changeRow(glPos, -1));
+                if (glId > 0 && glId != topGlId) {
                     // 如果已经有基准线则刷新其位置
                     refreshGuideline(glId, ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
                 } else {
@@ -566,6 +598,35 @@ public class GridConstraintLayout extends ConstraintLayout {
             }
         }
         return maxWidth;
+    }
+
+    /**
+     * 计算正在使用的最大行列数
+     */
+    private void calculateInUseMaxPos() {
+        if (getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            for (int i = colCount - 1; i >= 0; i--) {
+                if (maxSizeArray.get(Utils.getColPosByRealCol(i)) > 0) {
+                    // 如果最大宽度不为0，说明这一列有原子
+                    inUseMaxCol = i;
+                    break;
+                }
+            }
+        } else {
+            inUseMaxCol = colCount - 1;
+        }
+
+        if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            for (int i = rowCount - 1; i >= 0; i--) {
+                if (maxSizeArray.get(Utils.getRowPosByRealRow(i)) > 0) {
+                    // 如果最大高度不为0，说明这一行有原子
+                    inUseMaxRow = i;
+                    break;
+                }
+            }
+        } else {
+            inUseMaxRow = rowCount - 1;
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import com.jerry.gcl.GridConstraintLayout;
 
@@ -66,18 +67,22 @@ public class MainActivity extends AppCompatActivity {
 
         final GridConstraintLayout gclWrapContainer = findViewById(R.id.gcl_wrap_container);
         try {
-            View view = new View(this);
+            TextView view = new TextView(this);
+            view.setText("1");
             view.setBackgroundColor(colorArray[0]);
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 0).size(200, 20).gravity(Gravity.TOP));
-            view = new View(this);
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 0).size(100, ConstraintSet.WRAP_CONTENT));
+            view = new TextView(this);
+            view.setText("2");
             view.setBackgroundColor(colorArray[1]);
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 1).size(400, 30));
-            view = new View(this);
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(100, ConstraintSet.WRAP_CONTENT));
+            view = new TextView(this);
+            view.setText("3");
             view.setBackgroundColor(colorArray[2]);
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(100, 50));
-            view = new View(this);
+//            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT));
+            view = new TextView(this);
+            view.setText("4");
             view.setBackgroundColor(colorArray[3]);
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 0).size(500, 30).span(1, 2).gravity(Gravity.LEFT | Gravity.TOP));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 1).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.LEFT | Gravity.TOP));
         } catch (Exception e) {
             e.printStackTrace();
         }
