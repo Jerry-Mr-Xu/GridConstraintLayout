@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
 
 android {
     compileSdkVersion 28
@@ -22,6 +24,9 @@ android {
         }
     }
 
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
@@ -31,4 +36,110 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+
+group = "com.jerry.gcl"
+version = "1.0.0"
+
+def siteUrl = "https://github.com/Jerry-Mr-Xu/GridConstraintLayout"
+def gitUrl = "https://github.com/Jerry-Mr-Xu/GridConstraintLayout.git"
+
+install {
+    repositories.mavenInstaller {
+        // 生成pom.xml和参数
+        pom {
+            project {
+                packaging 'aar'
+                // 项目名称
+                name 'gridconstraintlayout'
+                // 项目描述
+                description 'A grid layout base on constraint layout'
+                // 项目主页
+                url siteUrl
+
+                // 软件开源协议，一般都是Apache License2.0
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                // 开发者基本信息
+                developers {
+                    developer {
+                        // 开发者的id
+                        id 'Jerry-Mr-Xu'
+                        // 开发者名字
+                        name 'Jerry-Mr-Xu'
+                        // 开发者邮箱
+                        email '285373161@qq.com'
+                    }
+                }
+
+                scm {
+                    // Git仓库地址
+                    connection gitUrl
+                    // Git仓库地址
+                    developerConnection gitUrl
+                    // 项目主页
+                    url siteUrl
+                }
+
+                dependencies {
+                    dependency {
+                        groupId "com.jerry.gcl"
+                        version "1.0.0"
+                        artifactId "GridConstraintLayout"
+                        scope "compile"
+                    }
+
+                }
+            }
+        }
+    }
+}
+
+// 生成jar包的task
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+}
+
+// 生成jarDoc的task
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    failOnError = false
+}
+
+// 生成javaDoc的jar
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// 发布内容包括javadocJar和sourcesJar
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def bintray_user = properties.getProperty("bintray.user")
+def bintray_key = properties.getProperty("bintray.apikey")
+
+bintray {
+    user = bintray_user
+    key = bintray_key
+
+    configurations = ['archives']
+    pkg {
+        repo = "AndroidCustomLayoutRepo"
+        name = "GridConstraintLayout"
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true //这个必须设置为true才能发布
+    }
 }

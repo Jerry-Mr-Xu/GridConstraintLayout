@@ -8,7 +8,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.5.2'
-        
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
+        classpath'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -19,6 +20,13 @@ allprojects {
         google()
         jcenter()
         
+    }
+
+    //解决 JavaDoc 中文注释生成失败的问题
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+        options.addStringOption('encoding', 'UTF-8')
+        options.addStringOption('charSet', 'UTF-8')
     }
 }
 
