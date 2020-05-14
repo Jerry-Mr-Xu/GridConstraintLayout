@@ -47,7 +47,9 @@ public class MainActivity extends AppCompatActivity {
                         startRow = startRow > upRow ? upRow : startRow;
                         startCol = startCol > upCol ? upCol : startCol;
 
-                        final View view = new View(MainActivity.this);
+                        final TextView view = new TextView(MainActivity.this);
+                        view.setText(String.valueOf(rowSpan * colSpan));
+                        view.setGravity(Gravity.CENTER);
                         view.setBackgroundColor(colorArray[colorIndex]);
                         try {
                             gclContainer.setCell(new GridConstraintLayout.CellBuilder(view, startRow, startCol).size(ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.MATCH_CONSTRAINT).span(rowSpan, colSpan));
@@ -78,11 +80,15 @@ public class MainActivity extends AppCompatActivity {
             view = new TextView(this);
             view.setText("3");
             view.setBackgroundColor(colorArray[2]);
-//            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 3).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.RIGHT));
             view = new TextView(this);
             view.setText("4");
             view.setBackgroundColor(colorArray[3]);
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 1).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.LEFT | Gravity.TOP));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 0).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.LEFT | Gravity.TOP));
+            view = new TextView(this);
+            view.setText("5");
+            view.setBackgroundColor(colorArray[4]);
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 2).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2));
         } catch (Exception e) {
             e.printStackTrace();
         }
