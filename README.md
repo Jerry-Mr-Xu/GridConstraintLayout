@@ -173,5 +173,21 @@ try {
 }
 ```
 
+`AdapterView`中使用方式，因为复用原因需要先检查是否已有原子
+
+```java
+public View getView(int position, View convertView, ViewGroup parent){
+    final GridConstraintLayout gclContainer;
+    ItemView itemView = (ItemView) gclContainer.getCellView(0, i);
+    if (itemView == null) {
+        try {
+            itemView = (ItemView) gclContainer.setCell(new GridConstraintLayout.CellBuilder(new ItemView(context, 0, i).size(ConstraintSet.MATCH_CONSTRAINT, ConstraintSet.WRAP_CONTENT));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
 ![demo_img](https://github.com/Jerry-Mr-Xu/GridConstraintLayout/blob/master/screenshot/demo01.png?raw=true)
 
