@@ -47,13 +47,13 @@ public class GridConstraintLayout extends ConstraintLayout {
      * <key>原子在网格中的位置</key>
      * <value>原子对象</value>
      */
-    private SparseArray<Cell> cellArray = new SparseArray<Cell>(10);
+    private SparseArray<Cell> cellArray = new SparseArray<>(10);
     /**
-     * 基准线id数组
+     * 基准线数组
      * <key>基准线在网格中的位置</key>
-     * <value>基准线id</value>
+     * <value>基准线</value>
      */
-    private SparseIntArray guidelineIdArray = new SparseIntArray(10);
+    private SparseArray<Guideline> guidelineArray = new SparseArray<>(10);
 
     /**
      * 每行最高高度和每列最宽宽度数组
@@ -91,6 +91,7 @@ public class GridConstraintLayout extends ConstraintLayout {
     public void setSize(final int rowCount, final int colCount) {
         this.rowCount = rowCount;
         this.colCount = colCount;
+        // TODO: 2020/5/22 需要重新布局计算
     }
 
     /**
@@ -149,9 +150,20 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param cellRow 原子在第几行
      * @param cellCol 原子在第几列
      */
+    @MainThread
     public void removeCell(final int cellRow, final int cellCol) {
-        // TODO: 2020/4/20 这里需要重新计算行列最大宽高并重新布局
-        removeCell(Utils.getPosByRowAndCol(cellRow, cellCol), null);
+        final SparseIntArray needCalculatePos = new SparseIntArray();
+        removeCell(Utils.getPosByRowAndCol(cellRow, cellCol), needCalculatePos);
+
+        // 移除原子后需要重新计算一遍
+        calculateMaxSize(needCalculatePos);
+        calculateInUseMaxPos();
+
+        setupGuidelines();
+        // 设置原子View的约束
+        for (int i = 0; i < cellArray.size(); i++) {
+            refreshCellConstraint(cellArray.keyAt(i));
+        }
     }
 
     public int getRowCount() {
@@ -194,20 +206,19 @@ public class GridConstraintLayout extends ConstraintLayout {
         }
 
         final int cellViewId = cell.view.getId();
-        final int cellRowSpan = cell.rowSpan, cellColSpan = cell.colSpan;
 
         final int cellLeftTopPos = cellPos;
-        final int cellRightBottomPos = Utils.changeRowAndCol(cellPos, cellRowSpan - 1, cellColSpan - 1);
+        final int cellRightBottomPos = Utils.changeRowAndCol(cellPos, cell.rowSpan - 1, cell.colSpan - 1);
 
         final int cellRealLeftCol = Utils.getRealCol(cellLeftTopPos);
         final int cellRealTopRow = Utils.getRealRow(cellLeftTopPos);
         final int cellRealRightCol = Utils.getRealCol(cellRightBottomPos);
         final int cellRealBottomRow = Utils.getRealRow(cellRightBottomPos);
 
-        final int cellLeftColPos = Utils.getColPosByPos(cellLeftTopPos);
-        final int cellTopRowPos = Utils.getRowPosByPos(cellLeftTopPos);
-        final int cellRightColPos = Utils.getColPosByPos(cellRightBottomPos);
-        final int cellBottomRowPos = Utils.getRowPosByPos(cellRightBottomPos);
+        final Guideline cellLeftGl = guidelineArray.get(Utils.getColPosByPos(cellLeftTopPos));
+        final Guideline cellTopGl = guidelineArray.get(Utils.getRowPosByPos(cellLeftTopPos));
+        final Guideline cellRightGl = guidelineArray.get(Utils.changeCol(Utils.getColPosByPos(cellRightBottomPos), 1));
+        final Guideline cellBottomGl = guidelineArray.get(Utils.changeRow(Utils.getRowPosByPos(cellRightBottomPos), 1));
 
         final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
         final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -228,10 +239,10 @@ public class GridConstraintLayout extends ConstraintLayout {
             bottomMargin = (rowCount - cellRealBottomRow - 1) * verSpacing / rowCount;
         }
 
-        constraintSet.connect(cellViewId, ConstraintSet.START, guidelineIdArray.get(cellLeftColPos), ConstraintSet.START, leftMargin);
-        constraintSet.connect(cellViewId, ConstraintSet.TOP, guidelineIdArray.get(cellTopRowPos), ConstraintSet.TOP, topMargin);
-        constraintSet.connect(cellViewId, ConstraintSet.END, guidelineIdArray.get(Utils.changeCol(cellRightColPos, 1)), ConstraintSet.END, rightMargin);
-        constraintSet.connect(cellViewId, ConstraintSet.BOTTOM, guidelineIdArray.get(Utils.changeRow(cellBottomRowPos, 1)), ConstraintSet.BOTTOM, bottomMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.START, cellLeftGl == null ? ConstraintSet.PARENT_ID : cellLeftGl.getId(), ConstraintSet.START, leftMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.TOP, cellTopGl == null ? ConstraintSet.PARENT_ID : cellTopGl.getId(), ConstraintSet.TOP, topMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.END, cellRightGl == null ? ConstraintSet.PARENT_ID : cellRightGl.getId(), ConstraintSet.END, rightMargin);
+        constraintSet.connect(cellViewId, ConstraintSet.BOTTOM, cellBottomGl == null ? ConstraintSet.PARENT_ID : cellBottomGl.getId(), ConstraintSet.BOTTOM, bottomMargin);
         constraintSet.applyTo(this);
     }
 
@@ -253,18 +264,21 @@ public class GridConstraintLayout extends ConstraintLayout {
         int curOffset = 0;
         float percent = 0;
         final boolean isWidthWrapContent = getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT;
-        for (int i = 0; i <= inUseMaxCol + 1; i++) {
+        for (int i = 0; i <= colCount; i++) {
             final int glPos = Utils.getColPosByRealCol(i);
             if (i == 0 || i == inUseMaxCol + 1) {
-                guidelineIdArray.put(glPos, ConstraintSet.PARENT_ID);
-            } else {
+                // 如果是边界则以父容器为基准
+                replaceGuideline(glPos, null);
+            } else if (i > 0 && i < inUseMaxCol + 1) {
+                // 如果非边界则建立基准线
                 if (isWidthWrapContent) {
                     // 如果网格为自适应宽度，则根据原子宽度来确定基准线
                     final int maxSize = maxSizeArray.get(Utils.getColPosByRealCol(i - 1));
                     if (maxSize > 0) {
                         curOffset += maxSize;
                     } else {
-                        guidelineIdArray.put(glPos, guidelineIdArray.get(Utils.changeCol(glPos, -1)));
+                        // 如果这一列没有宽度则基准线和左一列相同
+                        replaceGuideline(glPos, Utils.changeCol(glPos, -1));
                         continue;
                     }
                 } else {
@@ -272,14 +286,17 @@ public class GridConstraintLayout extends ConstraintLayout {
                     percent = i * 1.0f / colCount;
                 }
 
-                final int glId = guidelineIdArray.get(glPos), leftGlId = guidelineIdArray.get(Utils.changeCol(glPos, -1));
-                if (glId > 0 && glId != leftGlId) {
-                    // 如果已经有基准线则刷新其位置
-                    refreshGuideline(glId, ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
+                final Guideline gl = guidelineArray.get(glPos), leftGl = guidelineArray.get(Utils.changeCol(glPos, -1));
+                if (gl != null && gl != leftGl) {
+                    // 如果已经有基准线且和左一列基准线不同则刷新其位置
+                    refreshGuideline(gl.getId(), ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
                 } else {
                     // 否则创建基准线
                     createGuideline(glPos, ConstraintSet.VERTICAL_GUIDELINE, curOffset, percent);
                 }
+            } else {
+                // 如果超出边界则移除基准线
+                removeGuideline(glPos);
             }
         }
     }
@@ -291,18 +308,21 @@ public class GridConstraintLayout extends ConstraintLayout {
         int curOffset = 0;
         float percent = 0;
         final boolean isHeightWrapContent = getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT;
-        for (int i = 0; i <= inUseMaxRow + 1; i++) {
+        for (int i = 0; i <= rowCount; i++) {
             final int glPos = Utils.getRowPosByRealRow(i);
             if (i == 0 || i == inUseMaxRow + 1) {
-                guidelineIdArray.put(glPos, ConstraintSet.PARENT_ID);
-            } else {
+                // 如果是边界则以父容器为基准
+                replaceGuideline(glPos, null);
+            } else if (i > 0 && i < inUseMaxRow + 1) {
+                // 如果非边界则建立基准线
                 if (isHeightWrapContent) {
                     // 如果网格为自适应高度，则根据原子高度来确定基准线
                     final int maxSize = maxSizeArray.get(Utils.getRowPosByRealRow(i - 1));
                     if (maxSize > 0) {
                         curOffset += maxSize;
                     } else {
-                        guidelineIdArray.put(glPos, guidelineIdArray.get(Utils.changeRow(glPos, -1)));
+                        // 如果这一行没有高度则基准线和上一行相同
+                        replaceGuideline(glPos, Utils.changeRow(glPos, -1));
                         continue;
                     }
                 } else {
@@ -310,14 +330,17 @@ public class GridConstraintLayout extends ConstraintLayout {
                     percent = i * 1.0f / rowCount;
                 }
 
-                final int glId = guidelineIdArray.get(glPos), topGlId = guidelineIdArray.get(Utils.changeRow(glPos, -1));
-                if (glId > 0 && glId != topGlId) {
-                    // 如果已经有基准线则刷新其位置
-                    refreshGuideline(glId, ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
+                final Guideline gl = guidelineArray.get(glPos), topGl = guidelineArray.get(Utils.changeRow(glPos, -1));
+                if (gl != null && gl != topGl) {
+                    // 如果已经有基准线且和上一行基准线不同则刷新其位置
+                    refreshGuideline(gl.getId(), ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
                 } else {
                     // 否则创建基准线
                     createGuideline(glPos, ConstraintSet.HORIZONTAL_GUIDELINE, curOffset, percent);
                 }
+            } else {
+                // 如果超出边界则移除基准线
+                removeGuideline(glPos);
             }
         }
     }
@@ -357,9 +380,59 @@ public class GridConstraintLayout extends ConstraintLayout {
         final Guideline guideline = new Guideline(getContext());
         guideline.setId(Utils.generateViewId());
         addView(guideline);
-        guidelineIdArray.put(glPos, guideline.getId());
+        guidelineArray.put(glPos, guideline);
 
         refreshGuideline(guideline.getId(), glOri, glOff, glPer);
+    }
+
+    /**
+     * 从网格中移除基准线
+     *
+     * @param glPos 基准线在网格中的位置
+     */
+    private void removeGuideline(final int glPos) {
+        final int indexInArray = guidelineArray.indexOfKey(glPos);
+        if (indexInArray > 0) {
+            // 如果有则移除
+            final Guideline needRemoveGl = guidelineArray.valueAt(indexInArray);
+            if (needRemoveGl != null) {
+                removeView(needRemoveGl);
+            }
+            guidelineArray.removeAt(indexInArray);
+        }
+    }
+
+    /**
+     * 替换基准线
+     *
+     * @param replaceGlPos 被替换的基准线位置
+     * @param newGlPos     新基准线位置
+     */
+    private void replaceGuideline(final int replaceGlPos, final int newGlPos) {
+        final int newIndex = guidelineArray.indexOfKey(newGlPos);
+        if (newIndex > 0) {
+            // 如果新基准线存在则替换
+            replaceGuideline(replaceGlPos, guidelineArray.valueAt(newIndex));
+        } else {
+            // 如果新基准线不存在则移除基准线
+            removeGuideline(replaceGlPos);
+        }
+    }
+
+    /**
+     * 替换基准线
+     *
+     * @param replaceGlPos 被替换的基准线位置
+     * @param newGuideline 新基准线
+     */
+    private void replaceGuideline(final int replaceGlPos, @Nullable final Guideline newGuideline) {
+        final Guideline replaceGl = guidelineArray.get(replaceGlPos);
+        if (replaceGl != null) {
+            // 移除被替换的基准线
+            removeView(replaceGl);
+        }
+
+        guidelineArray.put(replaceGlPos, newGuideline);
     }
 
     /**

@@ -1,3 +1,5 @@
+
+
 # GridConstraintLayout
 
 一个基于`ConstraintLayout`实现的网格布局
@@ -49,6 +51,17 @@ public View setCell(@NonNull final CellBuilder cellBuilder) throws Exception
 | 参数        | 含义 |
 | ---------- | ---------- |
 | cellBuilder | 原子构造器 |
+
+```java
+public void removeCell(final int cellRow, final int cellCol)
+```
+
+移除指定位置的原子
+
+| 参数    | 含义         |
+| ------- | ------------ |
+| cellRow | 原子在第几行 |
+| cellCol | 原子在第几列 |
 
 ```java
 public void setSize(final int rowCount, final int colCount)

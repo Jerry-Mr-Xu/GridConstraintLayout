@@ -72,22 +72,52 @@ public class MainActivity extends AppCompatActivity {
             TextView view = new TextView(this);
             view.setText("1");
             view.setBackgroundColor(colorArray[0]);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gclWrapContainer.removeCell(0,0);
+                }
+            });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 0).size(100, ConstraintSet.WRAP_CONTENT));
             view = new TextView(this);
             view.setText("2");
             view.setBackgroundColor(colorArray[1]);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gclWrapContainer.removeCell(0,2);
+                }
+            });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(100, ConstraintSet.WRAP_CONTENT));
             view = new TextView(this);
             view.setText("3");
             view.setBackgroundColor(colorArray[2]);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gclWrapContainer.removeCell(0,3);
+                }
+            });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 3).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.RIGHT));
             view = new TextView(this);
             view.setText("4");
             view.setBackgroundColor(colorArray[3]);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gclWrapContainer.removeCell(1,0);
+                }
+            });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 0).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.LEFT | Gravity.TOP));
             view = new TextView(this);
             view.setText("5");
             view.setBackgroundColor(colorArray[4]);
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gclWrapContainer.removeCell(1,2);
+                }
+            });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 2).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2));
         } catch (Exception e) {
             e.printStackTrace();
