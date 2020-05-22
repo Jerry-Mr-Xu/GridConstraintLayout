@@ -52,6 +52,8 @@ public View setCell(@NonNull final CellBuilder cellBuilder) throws Exception
 | ---------- | ---------- |
 | cellBuilder | 原子构造器 |
 
+------
+
 ```java
 public void removeCell(final int cellRow, final int cellCol)
 ```
@@ -62,6 +64,8 @@ public void removeCell(final int cellRow, final int cellCol)
 | ------- | ------------ |
 | cellRow | 原子在第几行 |
 | cellCol | 原子在第几列 |
+
+------
 
 ```java
 public void setSize(final int rowCount, final int colCount)
@@ -74,6 +78,8 @@ public void setSize(final int rowCount, final int colCount)
 | rowCount | 网格有多少行 |
 | colCount | 网格有多少列 |
 
+------
+
 ```java
 public View getCellView(final int cellRow, final int cellCol)
 ```
@@ -85,11 +91,15 @@ public View getCellView(final int cellRow, final int cellCol)
 | cellRow | 要获取的原子在第几行 |
 | cellCol | 要获取的原子在第几列 |
 
+------
+
 ```java
 public int getRowCount()
 ```
 
 获取网格有多少行
+
+------
 
 ```java
 public int getColCount()
@@ -112,6 +122,8 @@ public CellBuilder(@NonNull final GridConstraintLayout parent, @LayoutRes final 
 | cellRow  | 原子所在行数 |
 | cellCol  | 原子所在列数 |
 
+------
+
 ```java
 public CellBuilder(final View view, final int cellRow, final int cellCol) throws NullPointerException
 ```
@@ -124,6 +136,8 @@ public CellBuilder(final View view, final int cellRow, final int cellCol) throws
 | cellRow | 原子所在行数 |
 | cellCol | 原子所在列数 |
 
+------
+
 ```java
 public CellBuilder size(final int viewWidth, final int viewHeight)
 ```
@@ -135,6 +149,8 @@ public CellBuilder size(final int viewWidth, final int viewHeight)
 | viewWidth  | 原子View宽度 |
 | viewHeight | 原子View高度 |
 
+------
+
 ```java
 public CellBuilder span(final int rowSpan, final int colSpan)
 ```
@@ -145,6 +161,8 @@ public CellBuilder span(final int rowSpan, final int colSpan)
 | ------- | -------- |
 | rowSpan | 所跨行数 |
 | colSpan | 所跨列数 |
+
+------
 
 ```java
 public CellBuilder gravity(final int gravity)
