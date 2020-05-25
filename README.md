@@ -9,7 +9,7 @@
 在`build.gradle`文件中添加如下代码
 
 ```groovy
-compile 'com.jerry.gcl:gridconstraintlayout:1.0.0@aar'
+compile 'com.jerry.gcl:gridconstraintlayout:1.1@aar'
 ```
 
 ## API
