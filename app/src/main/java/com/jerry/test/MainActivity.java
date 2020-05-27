@@ -96,10 +96,10 @@ public class MainActivity extends AppCompatActivity {
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    gclWrapContainer.removeCell(0, 2);
+                    gclWrapContainer.removeCell(0, 1);
                 }
             });
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(100, ConstraintSet.WRAP_CONTENT));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 1).size(100, ConstraintSet.WRAP_CONTENT));
             view = new TextView(this);
             view.setText("3");
             view.setBackgroundColor(colorArray[2]);
@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 2).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2));
+            gclWrapContainer.setSize(2, 5);
         } catch (Exception e) {
             e.printStackTrace();
         }

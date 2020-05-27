@@ -88,10 +88,40 @@ public class GridConstraintLayout extends ConstraintLayout {
      * @param rowCount 多少行
      * @param colCount 多少列
      */
+    @MainThread
     public void setSize(final int rowCount, final int colCount) {
+        if (rowCount < this.rowCount) {
+            // 如果行数变少了，则移除超出范围的原子和基准线
+            for (int i = rowCount; i <= this.rowCount; i++) {
+                removeGuideline(Utils.getRowPosByRealRow(i));
+            }
+            for (int i = rowCount; i < this.rowCount; i++) {
+                for (int j = 0; j < this.colCount; j++) {
+                    removeCell(Utils.getPosByRowAndCol(i, j));
+                }
+            }
+        }
+        if (colCount < this.colCount) {
+            // 如果列数变少了，则移除超出范围的原子和基准线
+            for (int i = colCount; i <= this.colCount; i++) {
+                removeGuideline(Utils.getColPosByRealCol(i));
+            }
+            for (int i = colCount; i < this.colCount; i++) {
+                for (int j = 0; j < rowCount; j++) {
+                    removeCell(Utils.getPosByRowAndCol(j, i));
+                }
+            }
+        }
+
         this.rowCount = rowCount;
         this.colCount = colCount;
-        // TODO: 2020/5/22 需要重新布局计算
+
+        calculateMaxSize();
+
+        // 建立基准线
+        setupGuidelines();
+        // 设置原子View的约束
+        setCellConstraint();
     }
 
     /**
