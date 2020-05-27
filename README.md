@@ -9,7 +9,7 @@
 在`build.gradle`文件中添加如下代码
 
 ```groovy
-compile 'com.jerry.gcl:gridconstraintlayout:1.1@aar'
+compile 'com.jerry.gcl:gridconstraintlayout:1.3@aar'
 ```
 
 ## API
@@ -71,7 +71,7 @@ public void removeCell(final int cellRow, final int cellCol)
 public void setSize(final int rowCount, final int colCount)
 ```
 
-设置网格行列数，必须在`setCell`之前调用
+设置网格行列数，已支持在有内容的情况下修改网格行列数（超出范围的原子会被清除）
 
 | 参数 | 含义         |
 | -------- | ------------ |
