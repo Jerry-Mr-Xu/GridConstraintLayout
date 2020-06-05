@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.view.View;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class Utils {
@@ -169,5 +170,25 @@ class Utils {
      */
     static boolean isColPos(final int pos) {
         return (pos & MASK_POS_ROW) == MASK_POS_ROW;
+    }
+
+    /**
+     * 将整型List转为整型数组
+     *
+     * @param intList 整型List
+     * @return 整型数组
+     */
+    static int[] convertIntListToArray(final List<Integer> intList) {
+        if (intList == null) {
+            return null;
+        }
+
+        final int[] resultIntArray = new int[intList.size()];
+        int i = 0;
+        for (Integer integer : intList) {
+            resultIntArray[i] = integer;
+            i++;
+        }
+        return resultIntArray;
     }
 }

@@ -10,6 +10,8 @@ import android.widget.TextView;
 
 import com.jerry.gcl.GridConstraintLayout;
 
+import org.w3c.dom.Text;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
@@ -79,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
                     gclWrapContainer.removeCell(1, 0);
                 }
             });
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 0).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.START | Gravity.TOP));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 0).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2).gravity(Gravity.TOP));
             view = new TextView(this);
             view.setText("1");
             view.setBackgroundColor(colorArray[0]);
@@ -106,10 +108,10 @@ public class MainActivity extends AppCompatActivity {
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    gclWrapContainer.removeCell(0, 3);
+                    ((TextView) v).append("3");
                 }
             });
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 3).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.END | Gravity.BOTTOM));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 3).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.BOTTOM));
             view = new TextView(this);
             view.setText("5");
             view.setBackgroundColor(colorArray[4]);
@@ -120,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 1, 2).size(210, ConstraintSet.WRAP_CONTENT).span(1, 2));
-            gclWrapContainer.setSize(2, 5);
+//            gclWrapContainer.setSize(2, 5);
         } catch (Exception e) {
             e.printStackTrace();
         }
