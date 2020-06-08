@@ -252,29 +252,22 @@ public class GridConstraintLayout extends ConstraintLayout {
             constraintSet.applyTo(this);
 
             if (isWidthWrapContent && rightCellIdArray.size() > 0) {
-                // 如果宽度自适应且有需要约束的原子
+                // 如果宽度自适应且需要建立右侧屏障
                 Barrier barrier = (Barrier) gridLineArray.get(nextColPos);
                 if (barrier != null && barrier.getId() != leftLineId) {
-                    // 如果原来有则刷新
+                    // 如果原来有并且和左边屏障不是同一个则刷新
                     refreshBarrier(barrier.getId(), Barrier.END, Utils.convertIntListToArray(rightCellIdArray));
                 } else {
                     // 否则创建
                     barrier = createAndAddBarrier(nextColPos, Barrier.END, Utils.convertIntListToArray(rightCellIdArray));
                 }
 
-                constraintSet.clone(this);
-                // 创建完后给当前列加上右侧约束
-                for (int j = 0; j < rowCount; j++) {
-                    final Cell cell = cellArray.get(Utils.getPosByRowAndCol(j, i));
-                    if (cell == null) {
-                        continue;
-                    }
-                    if (cell.innerCol == cell.colSpan - 1) {
-                        // 如果是原子末列则建立右侧约束
-                        constraintSet.connect(cell.view.getId(), ConstraintSet.END, barrier.getId(), ConstraintSet.END);
-                    }
-                }
-                constraintSet.applyTo(this);
+//                constraintSet.clone(this);
+//                // 创建完后给当前列加上右侧约束
+//                for (Integer cellId : rightCellIdArray) {
+//                    constraintSet.connect(cellId, ConstraintSet.END, barrier.getId(), ConstraintSet.START);
+//                }
+//                constraintSet.applyTo(this);
             } else if (isWidthWrapContent) {
                 // 如果没有需要约束的原子则删除网格线
                 replaceGridLine(nextColPos, curColPos);
@@ -332,29 +325,22 @@ public class GridConstraintLayout extends ConstraintLayout {
             constraintSet.applyTo(this);
 
             if (isHeightWrapContent && bottomCellIdArray.size() > 0) {
-                // 如果高度自适应且有需要约束的原子
+                // 如果高度自适应且需要建立下侧屏障
                 Barrier barrier = (Barrier) gridLineArray.get(nextRowPos);
                 if (barrier != null && barrier.getId() != topLineId) {
-                    // 如果原来有则刷新
+                    // 如果原来有并且和上边屏障不是同一个则刷新
                     refreshBarrier(barrier.getId(), Barrier.BOTTOM, Utils.convertIntListToArray(bottomCellIdArray));
                 } else {
                     // 否则创建
                     barrier = createAndAddBarrier(nextRowPos, Barrier.BOTTOM, Utils.convertIntListToArray(bottomCellIdArray));
                 }
 
-                constraintSet.clone(this);
-                // 创建完后给当前行加上下侧约束
-                for (int j = 0; j < colCount; j++) {
-                    final Cell cell = cellArray.get(Utils.getPosByRowAndCol(i, j));
-                    if (cell == null) {
-                        continue;
-                    }
-                    if (cell.innerRow == cell.rowSpan - 1) {
-                        // 如果是原子末行则建立下侧约束
-                        constraintSet.connect(cell.view.getId(), ConstraintSet.BOTTOM, barrier.getId(), ConstraintSet.BOTTOM);
-                    }
-                }
-                constraintSet.applyTo(this);
+//                constraintSet.clone(this);
+//                // 创建完后给当前行加上下侧约束
+//                for (Integer cellId : bottomCellIdArray) {
+//                    constraintSet.connect(cellId, ConstraintSet.END, barrier.getId(), ConstraintSet.END);
+//                }
+//                constraintSet.applyTo(this);
             } else if (isHeightWrapContent) {
                 // 如果没有需要约束的原子则删除网格线
                 replaceGridLine(nextRowPos, curRowPos);
@@ -487,6 +473,10 @@ public class GridConstraintLayout extends ConstraintLayout {
      */
     private void replaceGridLine(final int replaceLinePos, @Nullable final View newLine) {
         final View replaceLine = gridLineArray.get(replaceLinePos);
+        if (replaceLine == newLine) {
+            // 如果要替换的和新的是同一个对象则忽略
+            return;
+        }
         if (replaceLine != null) {
             // 从容器中移除被替换的网格线
             removeView(replaceLine);
@@ -523,6 +513,12 @@ public class GridConstraintLayout extends ConstraintLayout {
         // 给原子View设置宽高
         constraintSet.constrainWidth(cellView.getId(), viewWidth);
         constraintSet.constrainHeight(cellView.getId(), viewHeight);
+        if (viewWidth == ConstraintSet.WRAP_CONTENT) {
+            constraintSet.constrainDefaultWidth(cellView.getId(), ConstraintSet.MATCH_CONSTRAINT_WRAP);
+        }
+        if (viewHeight == ConstraintSet.WRAP_CONTENT) {
+            constraintSet.constrainDefaultHeight(cellView.getId(), ConstraintSet.MATCH_CONSTRAINT_WRAP);
+        }
         setCellViewGravity(cellView.getId(), viewGravity);
         // 给原子View设置Gravity
         constraintSet.applyTo(this);
