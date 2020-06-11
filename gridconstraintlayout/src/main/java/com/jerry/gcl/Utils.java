@@ -89,6 +89,28 @@ class Utils {
     }
 
     /**
+     * 给指定位置设置行
+     *
+     * @param pos     指定位置
+     * @param realRow 真实第几行
+     * @return 设置完行的位置
+     */
+    static int setPosRow(final int pos, final int realRow) {
+        return pos & MASK_POS_COL + (realRow << 16);
+    }
+
+    /**
+     * 给指定位置设置列
+     *
+     * @param pos     指定位置
+     * @param realCol 真实第几列
+     * @return 设置完列的位置
+     */
+    static int setPosCol(final int pos, final int realCol) {
+        return pos & MASK_POS_ROW + realCol;
+    }
+
+    /**
      * 给当前位置改变指定行
      *
      * @param pos       位置

@@ -10,8 +10,6 @@ import android.widget.TextView;
 
 import com.jerry.gcl.GridConstraintLayout;
 
-import org.w3c.dom.Text;
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
@@ -111,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                     ((TextView) v).append("3");
                 }
             });
-            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 3).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.BOTTOM));
+            gclWrapContainer.setCell(new GridConstraintLayout.CellBuilder(view, 0, 2).size(ConstraintSet.WRAP_CONTENT, ConstraintSet.WRAP_CONTENT).gravity(Gravity.BOTTOM));
             view = new TextView(this);
             view.setText("5");
             view.setBackgroundColor(colorArray[4]);
