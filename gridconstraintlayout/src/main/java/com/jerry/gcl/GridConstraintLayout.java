@@ -325,6 +325,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                     constraintSet.connect(cell.view.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
                 } else {
                     // 如果是原子右边缘，则添加到右边缘数组中,为后面添加Barrier
+                    constraintSet.clear(cell.view.getId(), ConstraintSet.END);
                     endCellIdList.add(cell.view.getId());
                 }
             }
@@ -458,6 +459,7 @@ public class GridConstraintLayout extends ConstraintLayout {
                     constraintSet.connect(cell.view.getId(), ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
                 } else {
                     // 如果是原子下边缘，则添加到下边缘数组中,为后面添加Barrier
+                    constraintSet.clear(cell.view.getId(), ConstraintSet.BOTTOM);
                     endCellIdList.add(cell.view.getId());
                 }
             }
@@ -660,14 +662,14 @@ public class GridConstraintLayout extends ConstraintLayout {
         // 给原子View设置Gravity
         constraintSet.applyTo(this);
 
-        if (viewWidth == ConstraintSet.WRAP_CONTENT) {
-            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
-            cellLp.constrainedWidth = true;
-        }
-        if (viewHeight == ConstraintSet.WRAP_CONTENT) {
-            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
-            cellLp.constrainedHeight = true;
-        }
+//        if (viewWidth == ConstraintSet.WRAP_CONTENT) {
+//            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
+//            cellLp.constrainedWidth = true;
+//        }
+//        if (viewHeight == ConstraintSet.WRAP_CONTENT) {
+//            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
+//            cellLp.constrainedHeight = true;
+//        }
 
         for (int row = 0; row < cellRowSpan; row++) {
             for (int col = 0; col < cellColSpan; col++) {
