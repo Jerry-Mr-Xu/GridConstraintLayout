@@ -49,18 +49,18 @@ public class GridConstraintLayout extends ConstraintLayout {
      * <key>原子在网格中的位置</key>
      * <value>原子对象</value>
      */
-    private SparseArray<Cell> cellArray = new SparseArray<>(20);
+    private final SparseArray<Cell> cellArray = new SparseArray<>(20);
     /**
      * 网格线数组
      * <key>网格线在网格中的位置</key>
      * <value>网格线</value>
      */
-    private SparseArray<View> gridLineArray = new SparseArray<>(10);
+    private final SparseArray<View> gridLineArray = new SparseArray<>(10);
 
     /**
      * 该网格布局的约束关系
      */
-    private ConstraintSet constraintSet = new ConstraintSet();
+    private final ConstraintSet constraintSet = new ConstraintSet();
 
     public GridConstraintLayout(Context context) {
         super(context);
@@ -321,7 +321,7 @@ public class GridConstraintLayout extends ConstraintLayout {
             }
             if (cell.innerCol == cell.colSpan - 1) {
                 if (realCol == inUseMaxCol) {
-                    // 如果是最后的有原子一列则添加与父容器的约束
+                    // 如果是最后一列则添加与父容器的约束
                     constraintSet.connect(cell.view.getId(), ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, 0);
                 } else {
                     // 如果是原子右边缘，则添加到右边缘数组中,为后面添加Barrier
@@ -349,11 +349,11 @@ public class GridConstraintLayout extends ConstraintLayout {
             }
 
             // 建立右侧约束，为了Gravity能生效
-//            constraintSet.clone(this);
-//            for (Integer cellId : endCellIdList) {
-//                constraintSet.connect(cellId, ConstraintSet.END, endBarrier.getId(), ConstraintSet.START);
-//            }
-//            constraintSet.applyTo(this);
+            constraintSet.clone(this);
+            for (Integer cellId : endCellIdList) {
+                constraintSet.connect(cellId, ConstraintSet.END, endBarrier.getId(), ConstraintSet.START);
+            }
+            constraintSet.applyTo(this);
         }
     }
 
@@ -426,24 +426,24 @@ public class GridConstraintLayout extends ConstraintLayout {
      */
     private void setupHorBarrier(int realRow) {
         // 上侧和下侧Barrier的位置
-        final int startBarrierPos = Utils.getRowPosByRealRow(realRow), endBarrierPos = Utils.changeRow(startBarrierPos, 1);
+        final int topBarrierPos = Utils.getRowPosByRealRow(realRow), bottomBarrierPos = Utils.changeRow(topBarrierPos, 1);
         if (realRow > inUseMaxRow) {
             // 如果超出使用中范围则移除上下Barrier
-            removeGridLine(startBarrierPos);
-            removeGridLine(endBarrierPos);
+            removeGridLine(topBarrierPos);
+            removeGridLine(bottomBarrierPos);
             // 直接返回因为这一行没有原子了
             return;
         }
 
         // 上侧Barrier和id
-        final View startBarrier = gridLineArray.get(startBarrierPos);
-        final int startBarrierId = startBarrier == null ? ConstraintSet.PARENT_ID : startBarrier.getId();
+        final View topBarrier = gridLineArray.get(topBarrierPos);
+        final int topBarrierId = topBarrier == null ? ConstraintSet.PARENT_ID : topBarrier.getId();
         // 下边缘原子id数组
-        final List<Integer> endCellIdList = new ArrayList<>(colCount);
+        final List<Integer> bottomCellIdList = new ArrayList<>(colCount);
 
         for (int i = 0; i < colCount; i++) {
             // 遍历这一行所有原子
-            final Cell cell = cellArray.get(Utils.setPosCol(startBarrierPos, i));
+            final Cell cell = cellArray.get(Utils.setPosCol(topBarrierPos, i));
             if (cell == null) {
                 continue;
             }
@@ -451,16 +451,16 @@ public class GridConstraintLayout extends ConstraintLayout {
             constraintSet.clone(this);
             if (cell.innerRow == 0) {
                 // 如果是原子上边缘，则建立上侧约束
-                constraintSet.connect(cell.view.getId(), ConstraintSet.TOP, startBarrierId, ConstraintSet.TOP, startBarrierId == ConstraintSet.PARENT_ID ? 0 : verSpacing);
+                constraintSet.connect(cell.view.getId(), ConstraintSet.TOP, topBarrierId, ConstraintSet.TOP, topBarrierId == ConstraintSet.PARENT_ID ? 0 : verSpacing);
             }
             if (cell.innerRow == cell.rowSpan - 1) {
                 if (realRow == inUseMaxRow) {
-                    // 如果是最后的有原子一行则添加与父容器的约束
+                    // 如果是最后一行则添加与父容器的约束
                     constraintSet.connect(cell.view.getId(), ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
                 } else {
                     // 如果是原子下边缘，则添加到下边缘数组中,为后面添加Barrier
                     constraintSet.clear(cell.view.getId(), ConstraintSet.BOTTOM);
-                    endCellIdList.add(cell.view.getId());
+                    bottomCellIdList.add(cell.view.getId());
                 }
             }
             constraintSet.applyTo(this);
@@ -469,25 +469,25 @@ public class GridConstraintLayout extends ConstraintLayout {
             return;
         }
 
-        if (endCellIdList.isEmpty()) {
-            // 如果这行无需建立下侧Barrier，则下侧Barrier即为下侧Barrier
-            replaceGridLine(endBarrierPos, startBarrierPos);
+        if (bottomCellIdList.isEmpty()) {
+            // 如果这行无需建立下侧Barrier，则下侧Barrier即为上侧Barrier
+            replaceGridLine(bottomBarrierPos, topBarrierPos);
         } else {
-            View endBarrier = gridLineArray.get(endBarrierPos);
-            if (endBarrier == null) {
+            View bottomBarrier = gridLineArray.get(bottomBarrierPos);
+            if (bottomBarrier == null) {
                 // 如果没有下侧Barrier，则创建
-                endBarrier = createAndAddBarrier(endBarrierPos, Barrier.BOTTOM, Utils.convertIntListToArray(endCellIdList));
+                bottomBarrier = createAndAddBarrier(bottomBarrierPos, Barrier.BOTTOM, Utils.convertIntListToArray(bottomCellIdList));
             } else {
                 // 如果有下侧Barrier，则刷新约束
-                refreshBarrier(endBarrier.getId(), Barrier.BOTTOM, Utils.convertIntListToArray(endCellIdList));
+                refreshBarrier(bottomBarrier.getId(), Barrier.BOTTOM, Utils.convertIntListToArray(bottomCellIdList));
             }
 
             // 建立下侧约束，为了Gravity能生效
-//            constraintSet.clone(this);
-//            for (Integer cellId : endCellIdList) {
-//                constraintSet.connect(cellId, ConstraintSet.BOTTOM, endBarrier.getId(), ConstraintSet.BOTTOM);
-//            }
-//            constraintSet.applyTo(this);
+            constraintSet.clone(this);
+            for (Integer cellId : bottomCellIdList) {
+                constraintSet.connect(cellId, ConstraintSet.BOTTOM, bottomBarrier.getId(), ConstraintSet.TOP);
+            }
+            constraintSet.applyTo(this);
         }
     }
 
@@ -516,7 +516,7 @@ public class GridConstraintLayout extends ConstraintLayout {
      */
     private void refreshBarrier(int barrierId, int barrierOri, int[] refIds) {
         constraintSet.clone(this);
-        constraintSet.createBarrier(barrierId, barrierOri, refIds);
+        constraintSet.createBarrier(barrierId, barrierOri, 0, refIds);
         constraintSet.applyTo(this);
     }
 
@@ -658,18 +658,11 @@ public class GridConstraintLayout extends ConstraintLayout {
         // 给原子View设置宽高
         constraintSet.constrainWidth(cellView.getId(), viewWidth);
         constraintSet.constrainHeight(cellView.getId(), viewHeight);
+        constraintSet.constrainedWidth(cellView.getId(), viewWidth == ConstraintSet.WRAP_CONTENT);
+        constraintSet.constrainedHeight(cellView.getId(), viewHeight == ConstraintSet.WRAP_CONTENT);
         setCellViewGravity(cellView.getId(), viewGravity);
         // 给原子View设置Gravity
         constraintSet.applyTo(this);
-
-//        if (viewWidth == ConstraintSet.WRAP_CONTENT) {
-//            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
-//            cellLp.constrainedWidth = true;
-//        }
-//        if (viewHeight == ConstraintSet.WRAP_CONTENT) {
-//            LayoutParams cellLp = (LayoutParams) cellView.getLayoutParams();
-//            cellLp.constrainedHeight = true;
-//        }
 
         for (int row = 0; row < cellRowSpan; row++) {
             for (int col = 0; col < cellColSpan; col++) {
